@@ -10,4 +10,4 @@ async def test_health_check_endpoint():
         data = response.json()
         assert data["status"] == "online"
         assert data["target_portal"] == "https://ug.fuwportal.edu.ng/index.php"
-        assert data["demo_user"] == "BSC/BCH/24/140"
+        assert data["demo_user"] == "ENG/COE/21/013"
