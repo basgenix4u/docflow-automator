@@ -2,17 +2,18 @@ import os
 import asyncio
 from playwright.async_api import async_playwright
 
-async def run_popup_exam_card_solver(
+async def run_single_page_popup_solver(
     username: str = "ENG/COE/21/013",
     password: str = "olaleke",
-    output_filename: str = "FUW_Exact_Popup_ExamCard_ENG_COE_21_013_A5.pdf"
+    output_filename: str = "FUW_1Page_ExamCard_ENG_COE_21_013_A5.pdf",
+    paper_format: str = "A5"
 ):
     out_dir = "/home/user/docflow-automator/storage/pdfs"
     os.makedirs(out_dir, exist_ok=True)
     pdf_full_path = os.path.join(out_dir, output_filename)
 
-    print("=== POPUP WEBVIEW INTERCEPTOR SOLVER INITIALIZED ===")
-    print(f"User: {username} | Output File: {pdf_full_path}")
+    print("=== SINGLE-PAGE AUTO-FITTING POPUP SOLVER INITIALIZED ===")
+    print(f"User: {username} | Format: {paper_format} | File: {pdf_full_path}")
 
     async with async_playwright() as p:
         browser = await p.chromium.launch(
@@ -23,8 +24,8 @@ async def run_popup_exam_card_solver(
         page = await context.new_page()
 
         try:
-            # 1. Pre-clear session lock if active
-            print("\n1. Checking portal login status & clearing stale sessions...")
+            # 1. Pre-clear session lock
+            print("\n1. Pre-clearing session state...")
             try:
                 await page.goto("https://ug.fuwportal.edu.ng/index.php", wait_until="networkidle")
                 await page.evaluate("if (typeof $ === 'function') $.post('scriptfile_a.php', { contentvar: 'logout' });")
@@ -72,7 +73,7 @@ async def run_popup_exam_card_solver(
                 await page.goto("https://ug.fuwportal.edu.ng/print_course_form.php?id=exam&r_val=U3R1ZGVudA==", wait_until="networkidle")
                 await page.wait_for_timeout(3000)
 
-            # 4. Auto-Fill Intermediate Session & Semester Select Form
+            # 4. Auto-Fill Session & Semester Dropdowns
             print("\n4. Auto-filling session and semester dropdowns...")
             session_select = await page.query_selector("select[name*='session'], select[id*='session']")
             if session_select:
@@ -92,8 +93,8 @@ async def run_popup_exam_card_solver(
                     print(f"--> Selected Semester: '{opt_text}' ({first_val})")
                     await semester_select.select_option(first_val)
 
-            # 5. ATTACH POPUP LISTENER & CLICK SUBMIT
-            print("\n5. Attaching Popup Window Listener (context.expect_page) and clicking Submit...")
+            # 5. Attach Popup Interceptor & Click Submit
+            print("\n5. Intercepting popup window and submitting form...")
             submit_btn = await page.query_selector("input[type='submit'], button[type='submit'], input[value*='Print'], input[value*='Submit'], input[value*='Generate']")
 
             popup_page = None
@@ -102,72 +103,78 @@ async def run_popup_exam_card_solver(
                     async with context.expect_page(timeout=8000) as popup_info:
                         await submit_btn.click()
                     popup_page = await popup_info.value
-                    print(f"--> POPUP WINDOW INTERCEPTED! Popup URL: {popup_page.url}")
+                    print(f"--> POPUP WEBVIEW CAPTURED! URL: {popup_page.url}")
                 except Exception as e:
                     print("--> No new popup window, rendered in same tab:", e)
 
-            target_render_page = popup_page if popup_page else page
-            await target_render_page.wait_for_load_state("networkidle")
-            await target_render_page.wait_for_timeout(3000)
+            target_page = popup_page if popup_page else page
+            await target_page.wait_for_load_state("networkidle")
+            await target_page.wait_for_timeout(3000)
 
-            # 6. Inject Single Page Auto-Fit CSS
-            print("\n6. Injecting CSS page rules for single-page exact color printing and A5 paper format...")
-            await target_render_page.add_style_tag(content="""
-                @page {
-                    size: A5 portrait;
+            # 6. INJECT SINGLE-PAGE AUTO-FITTING CSS CONSTRAINTS
+            print(f"\n6. Injecting Single-Page Auto-Fitting CSS rules for {paper_format} paper size...")
+
+            zoom_level = "0.75" if paper_format.upper() == "A5" else "0.88"
+
+            await target_page.add_style_tag(content=f"""
+                @page {{
+                    size: {paper_format} portrait;
                     margin: 2mm;
-                }
-                html, body {
+                }}
+                html, body {{
                     height: 100% !important;
                     max-height: 100vh !important;
                     overflow: hidden !important;
                     margin: 0 !important;
                     padding: 0 !important;
-                }
-                body {
-                    zoom: 0.75 !important;
+                    box-sizing: border-box !important;
+                }}
+                body {{
+                    zoom: {zoom_level} !important;
                     -webkit-print-color-adjust: exact !important;
                     print-color-adjust: exact !important;
-                }
-                table {
+                    transform-origin: top left;
+                }}
+                table {{
                     margin-top: 1px !important;
                     margin-bottom: 2px !important;
-                }
-                td, th {
+                }}
+                td, th {{
                     padding: 1.5px 3px !important;
                     font-size: 7pt !important;
                     line-height: 1.05 !important;
-                }
-                img {
+                }}
+                img {{
                     max-height: 55px !important;
                     width: auto !important;
-                }
+                }}
             """)
 
-            print(f"7. Exporting exact webview DOM to A5 PDF: {pdf_full_path}")
-            await target_render_page.pdf(
+            # 7. Export Exactly 1 Page PDF
+            print(f"7. Exporting EXACT SINGLE-PAGE {paper_format} PDF to: {pdf_full_path}")
+            await target_page.pdf(
                 path=pdf_full_path,
-                format="A5",
+                format=paper_format,
                 print_background=True,
                 margin={"top": "2mm", "bottom": "2mm", "left": "2mm", "right": "2mm"}
             )
 
-            print(f"\n=== SUCCESS! EXACT WEBVIEW A5 PDF RENDERED: {pdf_full_path} ===")
+            print(f"\n=== SUCCESS! 1-PAGE {paper_format} PDF GENERATED: {pdf_full_path} ===")
             return pdf_full_path
 
         except Exception as err:
-            print("Popup Solver Error:", err)
+            print("Single Page Solver Error:", err)
             return None
 
         finally:
-            print("\n8. IMMEDIATELY LOGGING OUT to release session lock...")
+            print("\n8. Executing immediate session logout clearance...")
             try:
                 await page.evaluate("if (typeof $ === 'function') $.post('scriptfile_a.php', { contentvar: 'logout' });")
                 await page.wait_for_timeout(1000)
             except Exception:
                 pass
             await browser.close()
-            print("Session context closed & released.")
+            print("Session context closed and released cleanly.")
 
 if __name__ == "__main__":
-    asyncio.run(run_popup_exam_card_solver(username="ENG/COE/21/013", password="olaleke"))
+    asyncio.run(run_single_page_popup_solver("ENG/COE/21/013", "olaleke", "FUW_1Page_ExamCard_ENG_COE_21_013_A5.pdf", "A5"))
