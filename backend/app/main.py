@@ -22,7 +22,7 @@ async def lifespan(app: FastAPI):
         if not res_user.scalars().first():
             admin_user = User(
                 email="admin@docflow.io",
-                full_name="DocFlow Principal Admin",
+                full_name="DocFlow Production Admin",
                 hashed_password=hash_password("AdminPassword123!"),
                 role="ADMIN"
             )
@@ -38,30 +38,29 @@ async def lifespan(app: FastAPI):
                 auth_type="FORM",
                 username_field="userId",
                 password_field="password",
-                demo_username=settings.DEFAULT_DEMO_USERNAME,
-                demo_password=settings.DEFAULT_DEMO_PASSWORD,
+                demo_username="",
+                demo_password="",
                 status="ACTIVE"
             )
             session.add(fuw_portal)
             await session.commit()
             await session.refresh(fuw_portal)
 
-        # Seed default FUW Student Verification Workflow
+        # Seed default FUW Examination Card Workflow
         res_wf = await session.execute(select(Workflow).where(Workflow.portal_id == fuw_portal.id))
         if not res_wf.scalars().first():
             fuw_workflow = Workflow(
                 portal_id=fuw_portal.id,
-                name="FUW Student Portal Automated Verification & A4 Report Generation",
-                description="Automates login with demo credentials, extracts student profile data (Name, Matric No, Faculty, Department, Level, Adviser), and exports an A4 verification PDF document.",
-                steps_json='[{"action": "navigate", "value": "https://ug.fuwportal.edu.ng/index.php"}, {"action": "fill", "selector": "#userId", "value": "$USERNAME"}, {"action": "fill", "selector": "#password", "value": "$PASSWORD"}, {"action": "click", "selector": "button, input[type=\'submit\']"}, {"action": "wait", "value": "4000"}]',
-                target_format="A4"
+                name="FUW Student Portal Exam Card & Course Form Auto-Print",
+                description="Navigates to FUW portal, inputs student credentials dynamically, selects session/semester, intercepts popup webview, and exports exact A5/A4 PDF.",
+                steps_json='[{"action": "navigate", "value": "https://ug.fuwportal.edu.ng/index.php"}, {"action": "fill", "selector": "#userId", "value": "$USERNAME"}, {"action": "fill", "selector": "#password", "value": "$PASSWORD"}, {"action": "click", "selector": "button, input[type=\'submit\']"}]',
+                target_format="A5"
             )
             session.add(fuw_workflow)
 
         await session.commit()
 
     yield
-    # Shutdown
 
 app = FastAPI(
     title="DocFlow Automator API Engine",
@@ -90,11 +89,9 @@ app.include_router(security.router)
 async def health_check():
     return {
         "status": "online",
-        "system": "DocFlow Automator AI Software Factory Engine",
+        "system": "DocFlow Automator Engine",
         "timestamp": time.strftime("%Y-%m-%d %H:%M:%S"),
         "target_portal": settings.FUW_PORTAL_URL,
-        "demo_user": settings.DEFAULT_DEMO_USERNAME,
-        "storage_dir": settings.STORAGE_DIR,
         "storage_ready": os.path.exists(settings.STORAGE_DIR)
     }
 

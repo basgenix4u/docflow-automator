@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { Workflow, Play, Terminal, CheckCircle2, AlertCircle, RefreshCw, FileText, UserCheck } from "lucide-react";
+import { Workflow, Play, Terminal, UserCheck, RefreshCw, KeyRound } from "lucide-react";
 import { api } from "@/lib/api";
 import { Workflow as WorkflowType, WorkflowRun, LogEntry } from "@/types";
 
@@ -11,9 +11,10 @@ export default function WorkflowsPage() {
   const [loading, setLoading] = useState(true);
   const [executingId, setExecutingId] = useState<string | null>(null);
 
-  // Custom execution form inputs
-  const [customUser, setCustomUser] = useState("BSC/BCH/24/140");
-  const [customPass, setCustomPass] = useState("Omotola");
+  // Dynamic credentials inputs - empty by default for any portal user
+  const [customUser, setCustomUser] = useState("");
+  const [customPass, setCustomPass] = useState("");
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [activeRun, setActiveRun] = useState<WorkflowRun | null>(null);
 
   const loadWorkflowData = async () => {
@@ -40,6 +41,12 @@ export default function WorkflowsPage() {
   }, []);
 
   const handleExecuteWorkflow = async (workflowId: string) => {
+    setErrorMessage(null);
+    if (!customUser || !customPass) {
+      setErrorMessage("Please enter student User ID (e.g. ENG/COE/21/013) and password.");
+      return;
+    }
+
     setExecutingId(workflowId);
     try {
       const run = await api.runWorkflow(workflowId, {
@@ -50,6 +57,7 @@ export default function WorkflowsPage() {
       await loadWorkflowData();
     } catch (err: any) {
       console.error("Execution error:", err);
+      setErrorMessage(err.message || "Failed to execute portal automation");
     } finally {
       setExecutingId(null);
     }
@@ -71,37 +79,48 @@ export default function WorkflowsPage() {
           <span>Workflow Orchestrator & Live Execution Console</span>
         </h1>
         <p className="text-xs text-slate-400 mt-1">
-          Trigger Playwright browser automation workflows, monitor real-time execution logs, and inspect extracted data.
+          Input student credentials dynamically, trigger Playwright browser automation workflows, and export exact PDF documents.
         </p>
       </div>
 
+      {errorMessage && (
+        <div className="p-4 rounded-xl bg-rose-950/50 border border-rose-800 text-rose-300 text-xs font-mono flex items-center justify-between">
+          <span>⚠️ {errorMessage}</span>
+          <button onClick={() => setErrorMessage(null)} className="text-slate-400 hover:text-slate-200">Dismiss</button>
+        </div>
+      )}
+
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* Left Col: Workflows List & Execution Controls */}
+        {/* Left Col: Dynamic Credentials & Workflows List */}
         <div className="space-y-6">
           <div className="bg-slate-900/80 border border-slate-800 rounded-2xl p-5 space-y-4">
             <h2 className="text-sm font-bold text-white flex items-center gap-2">
-              <UserCheck className="w-4 h-4 text-cyan-400" />
-              <span>Target Portal Credentials</span>
+              <KeyRound className="w-4 h-4 text-cyan-400" />
+              <span>Input Student Portal Credentials</span>
             </h2>
 
             <div className="space-y-3 text-xs font-mono">
               <div className="space-y-1">
-                <label className="text-slate-400 block font-sans">User ID / Matric No</label>
+                <label className="text-slate-300 block font-sans font-semibold">Student User ID / Reg No</label>
                 <input
                   type="text"
+                  required
+                  placeholder="e.g. ENG/COE/21/013 or BSC/BCH/24/140"
                   value={customUser}
                   onChange={(e) => setCustomUser(e.target.value)}
-                  className="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-cyan-300 font-bold focus:outline-none focus:border-cyan-500"
+                  className="w-full bg-slate-950 border border-slate-800 rounded-lg p-2.5 text-cyan-300 font-bold focus:outline-none focus:border-cyan-500"
                 />
               </div>
 
               <div className="space-y-1">
-                <label className="text-slate-400 block font-sans">Password</label>
+                <label className="text-slate-300 block font-sans font-semibold">Password</label>
                 <input
                   type="password"
+                  required
+                  placeholder="Enter portal passcode"
                   value={customPass}
                   onChange={(e) => setCustomPass(e.target.value)}
-                  className="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-slate-200 focus:outline-none focus:border-cyan-500"
+                  className="w-full bg-slate-950 border border-slate-800 rounded-lg p-2.5 text-slate-200 focus:outline-none focus:border-cyan-500"
                 />
               </div>
             </div>
@@ -155,7 +174,6 @@ export default function WorkflowsPage() {
 
         {/* Right Col: Live Execution Log Console & Extracted Results */}
         <div className="lg:col-span-2 space-y-6">
-          {/* Active Run Header */}
           <div className="bg-slate-900/80 border border-slate-800 rounded-2xl p-6 space-y-4">
             <div className="flex items-center justify-between border-b border-slate-800 pb-4">
               <div className="space-y-1">
@@ -179,19 +197,15 @@ export default function WorkflowsPage() {
               )}
             </div>
 
-            {/* Extracted Data Card */}
+            {/* Extracted Data Result Card */}
             {parsedExtractedData && Object.keys(parsedExtractedData).length > 0 && (
               <div className="bg-slate-950 p-4 rounded-xl border border-slate-800 space-y-3">
                 <h3 className="text-xs font-bold text-emerald-400 font-mono uppercase tracking-wider">
-                  Extracted Student Profile Records
+                  Extracted Student Record Summary
                 </h3>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs font-mono">
-                  <div>Name: <span className="text-white font-bold">{parsedExtractedData.full_name}</span></div>
-                  <div>Matric No: <span className="text-cyan-400 font-bold">{parsedExtractedData.student_id || parsedExtractedData.matric_no}</span></div>
-                  <div>Faculty: <span className="text-slate-300">{parsedExtractedData.faculty}</span></div>
-                  <div>Department: <span className="text-slate-300">{parsedExtractedData.department}</span></div>
-                  <div>Programme: <span className="text-slate-300">{parsedExtractedData.programme}</span></div>
-                  <div>Level: <span className="text-slate-300">{parsedExtractedData.current_level}</span></div>
+                  <div>User ID: <span className="text-cyan-400 font-bold">{parsedExtractedData.student_id}</span></div>
+                  <div>Portal Webview: <span className="text-slate-300">{parsedExtractedData.popup_webview_url || "https://ug.fuwportal.edu.ng/exam_card_printout.php"}</span></div>
                 </div>
               </div>
             )}
@@ -205,7 +219,7 @@ export default function WorkflowsPage() {
 
               {parsedLogs.length === 0 ? (
                 <div className="text-slate-600 py-6 text-center">
-                  No log output. Click "Execute Run" to start workflow.
+                  No log output. Input credentials on the left and click "Execute Run".
                 </div>
               ) : (
                 parsedLogs.map((log, idx) => (

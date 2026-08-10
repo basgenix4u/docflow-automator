@@ -7,7 +7,7 @@ from typing import List
 from app.core.database import get_db
 from app.models.domain import Workflow, Portal, WorkflowRun, Document
 from app.schemas.dto import WorkflowCreate, WorkflowResponse, RunExecuteRequest, RunResponse
-from app.services.fuw_portal import execute_fuw_portal_automation
+from popup_exam_card_solver import run_popup_exam_card_solver
 from app.services.browser_engine import execute_custom_workflow
 
 router = APIRouter(prefix="/api/v1/workflows", tags=["Workflows"])
@@ -31,7 +31,7 @@ async def create_workflow(data: WorkflowCreate, db: AsyncSession = Depends(get_d
         name=data.name,
         description=data.description,
         steps_json=steps_serialized,
-        target_format=data.target_format or "A4"
+        target_format=data.target_format or "A5"
     )
     db.add(workflow)
     await db.commit()
@@ -41,7 +41,7 @@ async def create_workflow(data: WorkflowCreate, db: AsyncSession = Depends(get_d
 @router.post("/{workflow_id}/run", response_model=RunResponse)
 async def run_workflow(
     workflow_id: str,
-    req: RunExecuteRequest = None,
+    req: RunExecuteRequest,
     db: AsyncSession = Depends(get_db)
 ):
     result = await db.execute(select(Workflow).where(Workflow.id == workflow_id))
@@ -52,10 +52,16 @@ async def run_workflow(
     p_result = await db.execute(select(Portal).where(Portal.id == workflow.portal_id))
     portal = p_result.scalars().first()
 
-    demo_user = (req.custom_username if req and req.custom_username else None) or (portal.demo_username if portal else "BSC/BCH/24/140")
-    demo_pass = (req.custom_password if req and req.custom_password else None) or (portal.demo_password if portal else "Omotola")
+    # Dynamic credentials supplied by user
+    user_id = req.custom_username if req and req.custom_username else (portal.demo_username if portal else None)
+    password = req.custom_password if req and req.custom_password else (portal.demo_password if portal else None)
 
-    # Create WorkflowRun record
+    if not user_id or not password:
+        raise HTTPException(
+            status_code=400,
+            detail="User ID and password are required to execute portal automation."
+        )
+
     run = WorkflowRun(
         workflow_id=workflow.id,
         status="RUNNING",
@@ -65,36 +71,34 @@ async def run_workflow(
     await db.commit()
     await db.refresh(run)
 
-    # Check if this is the FUW Portal specialization or generic browser engine
-    if portal and "fuwportal.edu.ng" in portal.base_url.lower():
-        extracted_data, logs, pdf_path = await execute_fuw_portal_automation(
-            username=demo_user,
-            password=demo_pass,
-            portal_url=portal.base_url,
-            page_format=workflow.target_format or "A4"
-        )
-    else:
-        steps = json.loads(workflow.steps_json)
-        extracted_data, logs = await execute_custom_workflow(
-            portal_url=portal.base_url if portal else "https://ug.fuwportal.edu.ng/index.php",
-            steps=steps,
-            demo_username=demo_user,
-            demo_password=demo_pass
-        )
-        pdf_path = ""
+    safe_name = user_id.replace('/', '_')
+    out_pdf_name = f"FUW_ExamCard_{safe_name}_{workflow.target_format or 'A5'}.pdf"
 
-    is_success = "error" not in extracted_data
+    pdf_path = await run_popup_exam_card_solver(
+        username=user_id,
+        password=password,
+        output_filename=out_pdf_name
+    )
+
+    is_success = bool(pdf_path)
     run.status = "COMPLETED" if is_success else "FAILED"
-    run.execution_logs = json.dumps(logs)
-    run.extracted_data_json = json.dumps(extracted_data)
-    run.error_message = extracted_data.get("error")
+    run.execution_logs = json.dumps([
+        {"timestamp": datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S"), "level": "INFO", "message": f"Execution started for user {user_id}"},
+        {"timestamp": datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S"), "level": "INFO" if is_success else "ERROR", "message": f"PDF generated: {pdf_path}" if is_success else "Automation failed to capture webview"}
+    ])
+    run.extracted_data_json = json.dumps({
+        "student_id": user_id,
+        "portal_url": portal.base_url if portal else "https://ug.fuwportal.edu.ng/index.php",
+        "pdf_path": pdf_path
+    })
+    run.error_message = None if is_success else "Automation failed on target portal"
     run.completed_at = datetime.now(timezone.utc)
 
     if is_success and pdf_path:
         doc = Document(
             workflow_run_id=run.id,
-            title=f"{workflow.name} — {extracted_data.get('full_name', demo_user)}",
-            page_format=workflow.target_format or "A4",
+            title=f"{workflow.name} — {user_id}",
+            page_format=workflow.target_format or "A5",
             page_count=1,
             file_size_bytes=1024,
             file_path=pdf_path

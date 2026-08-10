@@ -1,24 +1,20 @@
 services:
   - type: web
     name: docflow-automator-backend
-    env: docker
-    dockercontext: ./backend
+    runtime: docker
+    dockerContext: ./backend
     dockerfilePath: ./backend/Dockerfile
     region: oregon
     plan: free
     branch: main
     envVars:
       - key: PORT
-        value: 8000
+        value: "8000"
       - key: HOST
-        value: 0.0.0.0
+        value: "0.0.0.0"
       - key: DEBUG
         value: "False"
       - key: SECRET_KEY
         generateValue: true
       - key: FUW_PORTAL_URL
-        value: https://ug.fuwportal.edu.ng/index.php
-      - key: DEFAULT_DEMO_USERNAME
-        value: ENG/COE/21/013
-      - key: DEFAULT_DEMO_PASSWORD
-        value: olaleke
+        value: "https://ug.fuwportal.edu.ng/index.php"
