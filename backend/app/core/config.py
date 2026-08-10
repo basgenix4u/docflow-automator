@@ -12,8 +12,8 @@ class Settings(BaseSettings):
     DATABASE_URL: str = "sqlite+aiosqlite:////home/user/docflow-automator/backend/docflow.db"
 
     FUW_PORTAL_URL: str = "https://ug.fuwportal.edu.ng/index.php"
-    DEFAULT_DEMO_USERNAME: str = "BSC/BCH/24/140"
-    DEFAULT_DEMO_PASSWORD: str = "Omotola"
+    DEFAULT_DEMO_USERNAME: str = "ENG/COE/21/013"
+    DEFAULT_DEMO_PASSWORD: str = "olaleke"
 
     STORAGE_DIR: str = "/home/user/docflow-automator/storage/pdfs"
 
