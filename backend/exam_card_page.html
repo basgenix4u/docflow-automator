@@ -1,0 +1,353 @@
+<!DOCTYPE html><html lang="en"><head>
+    <meta charset="UTF-8">
+    <title>Federal University Wukari - Portal</title>
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <!-- Bootstrap -->
+    <link href="libs/bootstrap/css/bootstrap.min.css" rel="stylesheet">
+
+    <!-- HTML5 shim and Respond.js for IE8 support of HTML5 elements and media queries -->
+    <!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
+    <!--[if lt IE 9]>
+    <script src="https://oss.maxcdn.com/html5shiv/3.7.3/html5shiv.min.js"></script>
+    <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
+    <![endif]-->
+
+    <!--<link href="css/style.css" rel="stylesheet">-->
+    <script>
+function swapcontent(cv,v,a,b,c,d,e,f,g,h,i,j,k,l)
+{   //swap content begins where cv means div id name
+	var divid="#"+cv;//"#lga", {contentvar:cv,state:v}
+	$(divid).html('<img src="images/loader.gif" width="100" height="100" alt="loading">').show();
+	var url="scriptfile_a.php";
+	var str;
+	
+	
+ if(cv=='main_login') //start putme_login
+  {
+	  //alert(cv+" "+v+" "+a);exit();
+	  //alert($("form").serialize());exit();
+	  if(v=="" || a=="")
+			{
+				alert('Your Login ID and Password are compulsory');
+				$(divid).html('').show();  //stop loader from rolling
+				exit();
+			}
+		$.post(url,$("form").serialize()+"&contentvar="+cv,function(data){  //ajaxfile/scriptfile_a is called undernith
+		$(divid).html(data).show(); //report result from the ajaxfile, the data stores the information to be displayed from ajaxfile
+		
+		});
+  }//end of putme_login
+  
+  
+  if(cv=='dialog') //start dialog display
+  {
+	    ShowDialog(true);
+		$.post(url,{contentvar:cv},function(data){
+		$(divid).html(data).show(); //report result from the ajaxfile, the data stores the information to be displayed from ajaxfile
+		
+		});
+  }//end dialog display
+ 
+ if(cv=='password_recovery')
+  {
+	  //alert('here'+cv);
+	  $.post(url,{contentvar:cv},function(data){
+	  $('#w').html(data).show();
+	  $('#w').window('open');  //open the dialog to display info from ajax
+	  });
+  }//end of password recovery
+ 
+ if(cv=='pass_recovery_update')
+ {
+	 //alert($("#passform").serialize()); exit;
+	 var uname=$('#uname').val();
+	 var email=$('#email').val();
+	 if(uname=='' || email=='')
+	  {
+		  $.messager.alert('Error','Enter all the required information');$(divid).html('').show();exit;
+	  }
+	 $.post(url,$("#passform").serialize()+"&contentvar="+cv,function(data){  //ajaxfile/scriptfile_a is called undernith
+	 $(divid).html(data).show(); //report result from the ajaxfile, the data stores the information to be displayed from ajaxfile
+	 });
+ } //end of update password recovery
+  
+if(cv=='open_dialog')
+ {
+	 var div_id="#"+v;
+	  //$(div_id).window('close');
+	  $(div_id).window('open');
+ } //end of open dialog
+
+if(cv=='close_dialog')
+ {
+	 var div_id="#"+v;
+	  $(div_id).window('close');
+	  //$(div_id).window('open');
+ } //end of open dialog
+
+if(cv=='button')
+  {
+	  var div_id="#"+v;
+	  $(div_id).window('close');
+	  //$(div_id).window('open');
+  }
+}  //swap content ends
+ </script>
+
+
+    <style type="text/css">
+        .web_dialog_overlay
+        {
+            position: fixed;
+            top: 0;
+            right: 0;
+            bottom: 0;
+            left: 0;
+            height: 100%;
+            width: 100%;
+            margin: 0;
+            padding: 0;
+            background: #000000;
+            opacity: .15;
+            filter: alpha(opacity=15);
+            -moz-opacity: .15;
+            z-index: 101;
+            display: none;
+        }
+        .web_dialog
+        {
+            display: none;
+            position:fixed;
+            width: 400px; /* width of the dialog */
+            height: 300px; /* height of the dialog */
+            top: 20%;
+            left: 50%;
+            margin-left: -190px;
+            margin-top: -100px;
+            background-color: #ffffff;
+            border: 2px solid #336699;
+            padding: 0px;
+            z-index: 102;
+            font-family: Verdana;
+            font-size: 10pt;
+			overflow-y:none; /* enable scrolling or not for the dialog */
+        }
+        .web_dialog_title
+        {
+            border-bottom: solid 2px #336699;
+            background-color: #336699;
+            padding: 4px;
+            color: White;
+            font-weight:bold;
+        }
+        .web_dialog_title a
+        {
+            color: White;
+            text-decoration: none;
+        }
+        .align_right
+        {
+            text-align: right;
+        }
+    </style>
+
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <link href="libs/bootstrap/css/bootstrap.min.css" rel="stylesheet">
+<link rel="stylesheet" type="text/css" href="include/easyui.css">
+<link rel="stylesheet" type="text/css" href="include/icon.css">
+<link rel="stylesheet" type="text/css" href="include/demo.css">
+<link rel="stylesheet" href="css/tinybox.css">
+<script type="text/javascript" src="include/jquery.min.js"></script>
+<script type="text/javascript" src="include/jquery.easyui.min.js"></script>
+<script type="text/javascript" src="datepicker/tinybox.js"></script> 
+<script type="text/javascript" src="include/jquery.edatagrid.js"></script>
+<script type="text/javascript" src="include/jquery.serializeobject.js"></script>
+
+<link href="css/styles.css" rel="stylesheet" type="text/css">
+<link href="css/style.css" rel="stylesheet" type="text/css">
+<link href="css/menu.css" rel="stylesheet" type="text/css">
+<link rel="shortcut icon" href="images/logo.png"> <!-- put the image/logo on the browser tab -->
+
+
+<link rel="stylesheet" href="assets/countdown/jquery.countdown.css">
+<script src="assets/countdown/jquery.countdown.js"></script>
+		<script src="assets/js/script.js"></script>  
+        <!--Start of Tawk.to Script -->
+<script type="text/javascript">
+//var Tawk_API=Tawk_API||{}, Tawk_LoadStart=new Date();
+//(function(){
+//var s1=document.createElement("script"),s0=document.getElementsByTagName("script")[0];
+//s1.async=true;
+//s1.src='https://embed.tawk.to/5afe96625f7cdf4f053454ff/default';
+//s1.charset='UTF-8';
+//s1.setAttribute('crossorigin','*');
+//s0.parentNode.insertBefore(s1,s0);
+//})();
+</script>
+<script>
+$(document).bind("contextmenu",function(e){
+			 	//alert('disbled');
+		   return false;
+		 });
+		 /***********/
+			$.ctrl = function(key, callback, args) {
+			$(document).keydown(function(e) {
+				if(!args) args=[]; // IE barks when args is null 
+				if(e.keyCode == key.charCodeAt(0) && e.ctrlKey) {
+					callback.apply(this, args);
+					return false;
+				}
+			});        
+		};
+	/****/
+/**/
+	$.ctrl('U', function(e) {		
+    	//alert('disbled');
+	});
+	/**/
+	/**/
+	$.ctrl('S', function(e) {		
+    	//alert('disbled');
+	});
+	/**/
+	
+	
+</script>
+<!--End of Tawk.to Script-->
+</head>
+<body>
+
+<div class="p-wrap" style="background-image:url(images/bg.jpg); background-position:center; background-size:cover; background-repeat:no-repeat">
+    <nav class="p-nav container-fluid">
+        <div class="row" style="height: 100%;">
+        <div class="col-md-6 col-md-push-2" style="height: 100%">
+            <!--div class="dropdown p-n-i">
+                <button class="btn btn-default dropdown-toggle" type="button" id="dropdownMenu1" data-toggle="dropdown" aria-haspopup="true" aria-expanded="true">																	
+                    <span class="glyphicon glyphicon-menu-hamburger"></span>
+                </button>
+                <ul class="dropdown-menu" aria-labelledby="dropdownMenu1">
+                    <li><a href="#">Home</a></li>
+                    <li><a href="#">News</a></li>
+                    <li><a href="#">Admission Guide</a></li>
+                    <li role="separator" class="divider"></li>
+                    <li><a href="#">Application Guide</a></li>
+                </ul>
+            </div-->
+
+            <div class="logo pull-left" style=" padding-top:5px; padding-bottom:5px">
+                <img src="images/logofuw.png" style="height: 100%; width:auto">
+            </div>
+        </div>
+        </div>
+    </nav>
+    <div class="container-fluid" style="margin-top: 24px; min-height: 450px; position: relative; display: block;">
+        <div class="row">
+            <div class="col-md-10 col-md-push-2">
+                <section class="p-l-con col-md-5" style="border-radius:10px">
+                    <h4 class="breadcrumb" style="color:#060; font-size:22px">Portal Login</h4>
+                    <!--<p>
+                        Select appropriate account.
+                    </p>-->
+                    <form enctype="application/x-www-form-urlencoded" class="form-horizontal">
+                        <div class="form-group">
+                            <label for="userId" class="col-sm-2 control-label">User Id</label>
+                            <div class="col-sm-10">
+                                <input name="username" type="text" class="form-control" id="userId" placeholder="User Id">
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="password" class="col-sm-2 control-label">Password</label>
+                            <div class="col-sm-10">
+                                <input name="password" type="password" class="form-control" id="password" placeholder="Password" onkeydown="if (event.keyCode == 13) swapcontent('main_login',$('#username').val(),$('#password').val());">
+                            </div>
+                        </div>
+                        <!--<div class="form-group">
+                            <label for="userType" class="col-sm-2 control-label">User Type</label>
+                            <div class="col-sm-10">
+                                <select class="form-control" id="userType">
+                                    <option>Returning</option>
+                                    <option>Fresher</option>
+                                </select>
+                            </div>
+
+                        </div>-->
+                        <!--<div class="form-group">
+                            <div class="col-sm-offset-2 col-sm-10">
+                                <div class="checkbox">
+                                    <label>
+                                        <input type="checkbox"> Remember me
+                                    </label>
+                                </div>
+                            </div>
+                        </div>-->
+                        <div class="form-group">
+                            <div class="col-sm-offset-2 col-sm-10">
+                                <button type="button" class="btn btn-default btn-sm p-btn" style="width: 50%" onclick="swapcontent('main_login',$('#username').val(),$('#password').val())"> Login </button> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <a href="javascript:swapcontent('password_recovery')" style="color:gold">| Password Recovery |</a>
+                        </div>
+                        </div>
+                    </form>
+                    <div id="main_login"></div>
+                </section>
+                
+                <aside class="p-l-aside col-md-3 col-lg-push-1" style="border-radius:10px">
+                    <h4 class="p-head" style="color:#060; font-size:18px; font-weight:80">Portal Guidelines</h4>
+                    <ul class="update-li">
+                        <li><a href="viewmatrci.php" target="_blank">View Matriculation Number</a>
+                        </li><li><a href="putme_registration.php">Pre-Admission Screening Registration</a></li>
+                        <li><a href="putme_login.php">Applicant's Login</a></li>
+                        <li><a href="charges.php" target="_blank">School fees Charges</a>
+                        </li>
+                        <li><a href="reg_proce.php">Registration Instruction</a>
+                        </li>
+                        <li>
+                            <a href="#">Help &amp; Support</a>
+                        </li>
+                        <li>
+                            <a href="#">Faqs</a>
+                        </li>
+                        <!--<li>
+                            <p>The university is now moving on like never before...We are the number one school... VC is really working  </p>
+                        </li>-->
+                    </ul>
+                </aside>
+            </div>
+        </div>
+        <p>&nbsp;</p>
+        <!-- SCROLLING NEWS DIV -->
+		<!--span style="width:90%; text-align:center; padding:5px; border-bottom:solid 1px"><marquee> A.....................................................................................................................................................................................................s</marquee></span-->
+
+    </div>
+      
+ 
+ </div>
+<!-- end of div for container -->
+<!-- ************************** End of Contents ******************************* --->
+
+
+
+
+<!--<center><div id="footer" align="center">&copy; 2026. Federal University Wukari.</div></center>-->
+
+<!--<footer style="text-align:center">
+<span style="color:#FFF; text-align:center">&copy; 2026. Federal University Wukari.</span>
+    </footer>-->
+        
+<div id="footer" class="container-fluid">
+    <a href="#" style="float:left; color:green">Home</a>
+    <span class="pull-right" style="color: green">Fuwukari © 2026</span>
+</div>
+
+<div class="container-fluid" style="background-color:#FFF; height:100px">&nbsp;
+    <!--<a href="#">Home</a>
+    <span class="pull-right" style="color: #fff">Fuwukari &copy; 2017</span>-->
+</div>
+
+<!-- Include all compiled plugins (below), or include individual files as needed -->
+<script src="libs/bootstrap/js/bootstrap.min.js"></script>    
+
+
+<div class="panel window" style="display: none; width: 400px; left: 440px; top: 472px;"><div class="panel-header panel-header-noborder window-header" style="width: 388px;"><div class="panel-title panel-with-icon">Password Recovery!</div><div class="panel-icon icon-tip"></div><div class="panel-tool"><a class="panel-tool-collapse" href="javascript:void(0)"></a><a class="panel-tool-min" href="javascript:void(0)"></a><a class="panel-tool-max" href="javascript:void(0)"></a><a class="panel-tool-close" href="javascript:void(0)"></a></div></div><div id="w" class="easyui-window panel-body panel-body-noborder window-body" title="" data-options="modal:true,closed:true,iconCls:'icon-tip'" style="width: 388px; height: auto; padding: 10px;">
+    </div></div><div class="window-shadow" style="display: none; left: 440px; top: 472px;"></div><div class="window-mask" style="width: 1280px; height: 1000px; display: none;"></div></body></html>
