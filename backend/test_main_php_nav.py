@@ -2,17 +2,9 @@ import os
 import asyncio
 from playwright.async_api import async_playwright
 
-async def run_popup_exam_card_solver(
-    username: str = "ENG/COE/21/013",
-    password: str = "olaleke",
-    output_filename: str = "FUW_Exact_Popup_ExamCard_ENG_COE_21_013_A5.pdf"
-):
-    out_dir = "/home/user/docflow-automator/storage/pdfs"
-    os.makedirs(out_dir, exist_ok=True)
-    pdf_full_path = os.path.join(out_dir, output_filename)
-
-    print("=== POPUP WEBVIEW INTERCEPTOR SOLVER INITIALIZED ===")
-    print(f"User: {username} | Output File: {pdf_full_path}")
+async def test_main_nav():
+    out_file = "/home/user/docflow-automator/storage/pdfs/FUW_Pristine_A5_ExamCard_ENG_COE_21_013.pdf"
+    os.makedirs(os.path.dirname(out_file), exist_ok=True)
 
     async with async_playwright() as p:
         browser = await p.chromium.launch(
@@ -23,20 +15,10 @@ async def run_popup_exam_card_solver(
         page = await context.new_page()
 
         try:
-            # 1. Pre-clear session lock if active
-            print("\n1. Checking portal login status & clearing stale sessions...")
-            try:
-                await page.goto("https://ug.fuwportal.edu.ng/index.php", wait_until="networkidle")
-                await page.evaluate("if (typeof $ === 'function') $.post('scriptfile_a.php', { contentvar: 'logout' });")
-                await page.wait_for_timeout(1000)
-            except Exception:
-                pass
-
-            # 2. Login
-            print(f"2. Logging in as {username}...")
+            print("1. Opening index.php and filling credentials...")
             await page.goto("https://ug.fuwportal.edu.ng/index.php", wait_until="networkidle")
-            await page.fill("#userId", username)
-            await page.fill("#password", password)
+            await page.fill("#userId", "ENG/COE/21/013")
+            await page.fill("#password", "olaleke")
 
             login_btn = await page.query_selector("button, input[type='submit'], input[type='button'], a.btn")
             if login_btn:
@@ -48,12 +30,12 @@ async def run_popup_exam_card_solver(
 
             body_text = await page.inner_text("body")
             if "logged in on another device" in body_text:
-                print("--> Session lock detected. Retrying with auto-logout clearance...")
-                await page.evaluate("if (typeof $ === 'function') $.post('scriptfile_a.php', { contentvar: 'logout' });")
+                print("Session lock detected on server. Triggering auto-logout clearance...")
+                await page.evaluate("$.post('scriptfile_a.php', { contentvar: 'logout' });")
                 await page.wait_for_timeout(3000)
                 await page.goto("https://ug.fuwportal.edu.ng/index.php", wait_until="networkidle")
-                await page.fill("#userId", username)
-                await page.fill("#password", password)
+                await page.fill("#userId", "ENG/COE/21/013")
+                await page.fill("#password", "olaleke")
                 retry_btn = await page.query_selector("button, input[type='submit'], input[type='button'], a.btn")
                 if retry_btn:
                     await retry_btn.click()
@@ -61,27 +43,24 @@ async def run_popup_exam_card_solver(
                     await page.press("#password", "Enter")
                 await page.wait_for_timeout(4000)
 
-            print("--> Login Successful!")
+            print("2. Navigating to main.php...")
+            await page.goto("https://ug.fuwportal.edu.ng/main.php", wait_until="networkidle")
+            await page.wait_for_timeout(2000)
+            print(f"Main.php URL: {page.url}")
 
-            # 3. Navigate to Exam Card Selection Form
-            print("\n3. Navigating to Print Exam Card form (print_course_form.php?id=exam&r_val=U3R1ZGVudA==)...")
-            action_link = await page.query_selector("a[href*='id=exam']")
-            if action_link:
-                await page.evaluate("el => el.click()", action_link)
-                await page.wait_for_timeout(3000)
-            else:
-                await page.goto("https://ug.fuwportal.edu.ng/print_course_form.php?id=exam&r_val=U3R1ZGVudA==", wait_until="networkidle")
-                await page.wait_for_timeout(3000)
+            print("3. Navigating to print_course_form.php?id=exam&r_val=U3R1ZGVudA==...")
+            await page.goto("https://ug.fuwportal.edu.ng/print_course_form.php?id=exam&r_val=U3R1ZGVudA==", wait_until="networkidle")
+            await page.wait_for_timeout(3000)
+            print(f"Exam Form URL: {page.url}")
 
-            # 4. Auto-Fill Intermediate Session & Semester Select Form
-            print("\n4. Auto-filling session and semester dropdowns...")
+            # Auto-Fill Session & Semester
             session_select = await page.query_selector("select[name*='session'], select[id*='session']")
             if session_select:
                 options = await session_select.query_selector_all("option")
                 if len(options) > 1:
                     first_val = await options[1].get_attribute("value")
                     opt_text = (await options[1].inner_text()).strip()
-                    print(f"--> Selected Academic Session: '{opt_text}' ({first_val})")
+                    print(f"Selected Session: '{opt_text}' ({first_val})")
                     await session_select.select_option(first_val)
 
             semester_select = await page.query_selector("select[name*='semester'], select[id*='semester']")
@@ -90,11 +69,10 @@ async def run_popup_exam_card_solver(
                 if len(options) > 1:
                     first_val = await options[1].get_attribute("value")
                     opt_text = (await options[1].inner_text()).strip()
-                    print(f"--> Selected Semester: '{opt_text}' ({first_val})")
+                    print(f"Selected Semester: '{opt_text}' ({first_val})")
                     await semester_select.select_option(first_val)
 
-            # 5. ATTACH POPUP LISTENER & CLICK SUBMIT
-            print("\n5. Attaching Popup Window Listener (context.expect_page) and clicking Submit...")
+            # Submit and intercept popup
             submit_btn = await page.query_selector("input[type='submit'], button[type='submit'], input[value*='Print'], input[value*='Submit'], input[value*='Generate']")
 
             popup_page = None
@@ -103,20 +81,25 @@ async def run_popup_exam_card_solver(
                     async with context.expect_page(timeout=8000) as popup_info:
                         await submit_btn.click()
                     popup_page = await popup_info.value
-                    print(f"--> POPUP WINDOW INTERCEPTED! Popup URL: {popup_page.url}")
                 except Exception as e:
-                    print("--> No new popup window, rendered in same tab:", e)
+                    print("No popup intercept:", e)
 
-            target_render_page = popup_page if popup_page else page
-            await target_render_page.wait_for_load_state("networkidle")
-            await target_render_page.wait_for_timeout(3000)
+            target_page = popup_page if popup_page else page
+            await target_page.wait_for_load_state("networkidle")
+            await target_page.wait_for_timeout(3000)
 
-            # 6. Inject Print CSS for Pristine Isolated Webview Rendering
-            print("\n6. Injecting CSS page rules for pristine A5 paper format...")
-            await target_render_page.add_style_tag(content="""
+            print(f"4. Captured Target Webview URL: {target_page.url}")
+
+            body_txt = await target_page.inner_text("body")
+            print("Target Webview Body Text preview:")
+            print(body_txt[:1000])
+
+            # Inject clean isolation CSS for pristine A5 rendering
+            print("Injecting clean print isolation CSS...")
+            await target_page.add_style_tag(content="""
                 @page {
                     size: A5 portrait;
-                    margin: 4mm;
+                    margin: 5mm;
                 }
                 body {
                     background: #ffffff !important;
@@ -155,30 +138,22 @@ async def run_popup_exam_card_solver(
                 }
             """)
 
-            print(f"7. Exporting exact webview DOM to A5 PDF: {pdf_full_path}")
-            await target_render_page.pdf(
-                path=pdf_full_path,
+            print(f"Rendering pristine A5 PDF: {out_file}")
+            await target_page.pdf(
+                path=out_file,
                 format="A5",
                 print_background=True,
-                margin={"top": "4mm", "bottom": "4mm", "left": "4mm", "right": "4mm"}
+                margin={"top": "5mm", "bottom": "5mm", "left": "5mm", "right": "5mm"}
             )
 
-            print(f"\n=== SUCCESS! EXACT WEBVIEW A5 PDF RENDERED: {pdf_full_path} ===")
-            return pdf_full_path
-
-        except Exception as err:
-            print("Popup Solver Error:", err)
-            return None
+            print(f"SUCCESS! Pristine A5 PDF created: {out_file}")
 
         finally:
-            print("\n8. IMMEDIATELY LOGGING OUT to release session lock...")
             try:
-                await page.evaluate("if (typeof $ === 'function') $.post('scriptfile_a.php', { contentvar: 'logout' });")
-                await page.wait_for_timeout(1000)
+                await page.evaluate("$.post('scriptfile_a.php', { contentvar: 'logout' });")
             except Exception:
                 pass
             await browser.close()
-            print("Session context closed & released.")
 
 if __name__ == "__main__":
-    asyncio.run(run_popup_exam_card_solver(username="ENG/COE/21/013", password="olaleke"))
+    asyncio.run(test_main_nav())

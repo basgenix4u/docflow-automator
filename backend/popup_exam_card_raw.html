@@ -1,0 +1,409 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head>
+<title> Federal University Wukari: Instruction</title>
+<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+
+<!--<script src="datepicker/jquery-1.8.3.js"></script>
+<script src="datepicker/jquery-ui.js"></script>
+<script type="text/javascript" src="datepicker/jquery.form.js"></script>
+<link rel="stylesheet" href="datepicker/jquery-ui.css" />
+
+<link href="css/style.css" rel="stylesheet" type="text/css" />
+<link href="css/menu.css" rel="stylesheet" type="text/css" />
+<link rel="shortcut icon" href="images/logo.jpg"> <!-- put the image/logo on the browser tab -->
+
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <link href="libs/bootstrap/css/bootstrap.min.css" rel="stylesheet">
+<link rel="stylesheet" type="text/css" href="include/easyui.css">
+<link rel="stylesheet" type="text/css" href="include/icon.css">
+<link rel="stylesheet" type="text/css" href="include/demo.css">
+<link rel="stylesheet" href="css/tinybox.css">
+<script type="text/javascript" src="include/jquery.min.js"></script>
+<script type="text/javascript" src="include/jquery.easyui.min.js"></script>
+<script type="text/javascript" src="datepicker/tinybox.js"></script> 
+<script type="text/javascript" src="include/jquery.edatagrid.js"></script>
+<script type="text/javascript" src="include/jquery.serializeobject.js"></script>
+
+<link href="css/styles.css" rel="stylesheet" type="text/css">
+<link href="css/style.css" rel="stylesheet" type="text/css">
+<link href="css/menu.css" rel="stylesheet" type="text/css">
+<link rel="shortcut icon" href="images/logo.png"> <!-- put the image/logo on the browser tab -->
+
+
+<link rel="stylesheet" href="assets/countdown/jquery.countdown.css">
+<script src="assets/countdown/jquery.countdown.js"></script>
+		<script src="assets/js/script.js"></script>  
+        <!--Start of Tawk.to Script -->
+<script type="text/javascript">
+//var Tawk_API=Tawk_API||{}, Tawk_LoadStart=new Date();
+//(function(){
+//var s1=document.createElement("script"),s0=document.getElementsByTagName("script")[0];
+//s1.async=true;
+//s1.src='https://embed.tawk.to/5afe96625f7cdf4f053454ff/default';
+//s1.charset='UTF-8';
+//s1.setAttribute('crossorigin','*');
+//s0.parentNode.insertBefore(s1,s0);
+//})();
+</script>
+<script>
+$(document).bind("contextmenu",function(e){
+			 	//alert('disbled');
+		   return false;
+		 });
+		 /***********/
+			$.ctrl = function(key, callback, args) {
+			$(document).keydown(function(e) {
+				if(!args) args=[]; // IE barks when args is null 
+				if(e.keyCode == key.charCodeAt(0) && e.ctrlKey) {
+					callback.apply(this, args);
+					return false;
+				}
+			});        
+		};
+	/****/
+/**/
+	$.ctrl('U', function(e) {		
+    	//alert('disbled');
+	});
+	/**/
+	/**/
+	$.ctrl('S', function(e) {		
+    	//alert('disbled');
+	});
+	/**/
+	
+	
+</script>
+<!--End of Tawk.to Script-->
+<!--[if lt IE 7]>
+<style type="text/css" media="screen">
+#menuh{float:none;}
+body{behavior:url(csshover.htc); font-size:75%;}
+#menuh ul li{float:left; width: 100%;}
+#menuh a{height:1%;font:normal 1em/1.6em  helvetica,  "Trebuchet MS", arial, sans-serif;}
+</style>
+<![endif]-->
+     <!--CSS for modal popup begins-->
+     <style>
+         
+         *{
+ font-size:17px;
+}
+
+
+     </style>
+<!--  ############################ Java script codes ------------------------------------------------------------------------>
+<script>
+$(document).change(function(){
+//######### AutoSum	checkbox on chanege effect
+$("input[type=checkbox]").change(function(){
+  recalculate();
+});
+
+
+function recalculate(){
+    var sum1 = 0,sum2 = 0;
+	var v,msg;
+
+    $("input[type=checkbox]:checked").each(function(){
+		v=$(this).attr("rel");
+		v=v.split('***');
+		if(v[1]=='1st')
+		  //sum += parseInt($(this).attr("rel"));
+		  sum1 += parseInt(v[0]);
+		else if(v[1]=='2nd')
+			 sum2 += parseInt(v[0]);
+    });
+	// alert('First = '+sum1+' Second = '+sum2);
+	//msg="Total Unit for "++" semester = "+sum1+"<br>"+"Total Unit for "++" semester = "+sum2;
+	
+	msg="<font color='red'><b>Total Unit for 1st semester = "+sum1+"<br>"+"Total Unit for 2nd semester = "+sum2+"</b></font>";
+	$('#autosum').html(msg).show();
+   
+}
+// end of Autosum
+	
+	
+
+$("div#print_button").click(function(){
+   $("div.PrintArea").printArea({mode: "popup", popClose: false});
+  });
+
+})
+</script>
+<script>
+
+function swapcontent(cv,v,a,b,c,d,e,f,g,h,i,j,k,l)
+{   //swap content begins where cv means div id name
+   
+
+	var divid="#"+cv;//"#lga", {contentvar:cv,state:v}
+	$(divid).html('<img src="images/loader.gif" width="100" height="100" alt="loading">').show();
+	var url="scriptfile_b.php";
+	var str;
+		
+ if(cv=='logout') //start putme_logout
+  {
+	  	$.post(url,{contentvar:cv,ref:v},function(data){  //ajaxfile/scriptfile_a is called undernith
+		$(divid).html(data).show(); //report result from the ajaxfile, the data stores the information to be displayed from ajaxfile
+		
+		});
+  }//end of putme_login
+  
+  
+  if(cv=='dialog') //start dialog display
+  {
+	    ShowDialog(true);
+		$.post(url,{contentvar:cv},function(data){
+		$(divid).html(data).show(); //report result from the ajaxfile, the data stores the information to be displayed from ajaxfile
+		
+		});
+  }//end dialog display
+  if(cv=="carryover")
+	{
+		//alert($("form").serialize());exit();
+		$.post(url,$("form").serialize()+"&contentvar="+v+"&level="+a+"&session="+b+"&regno="+c+"&prog_id="+d,function(data){
+			//$.post(url,$("form").serialize()+"&contentvar="+v,function(data){
+			//alert(data);
+		$(divid).html(data).show();
+		
+		});
+		
+	}
+ if(cv=="save_preview_reg")
+	{
+		
+		$.post(url,$("form").serialize()+"&contentvar="+cv,function(data){
+		$(divid).html(data).show();
+		
+		});
+		
+	}
+if(cv=='acceptance_payment')
+ {
+	    //alert($("#accept_form").serialize());
+		//alert('Yes');exit();		
+	    $.post(url,$("form").serialize()+"&contentvar="+cv,function(data){  
+																	//alert(data);exit();
+		$(divid).html(data).show(); //report result from the ajaxfile, the data stores the information to be displayed from ajaxfile
+		
+		});
+ } //end of add acceptance payment
+ if(cv=="scholarship")
+ {
+	    //alert($("#accept_form").serialize());
+		//alert('Yes');exit();		
+	    $.post(url,{contentvar:cv,regno:v,session:a,level:b},function(data){  
+																	//alert(data);exit();
+		$(divid).html(data).show(); //report result from the ajaxfile, the data stores the information to be displayed from ajaxfile
+		
+		});
+ } //end of add acceptance payment
+}  //swap content ends
+ </script>   
+</head>
+<body>
+<!-- **************************** Heading *****************************************-->
+	<!-- banner start -->
+		<!-- banner end -->
+
+	<!-- top menu start -->
+		<!-- top menu end -->
+<!-- ********************************************* End of Header ******************************************* -->
+
+ <!-- Scrolling news -->
+ <!-- Scrolling news end -->
+
+<!--div id="container">
+  <!-- ************************** Sidebar start here ******************************* --->
+    <!-- ************************** End of Sidebar******************************* --->
+  
+  <!-- ************************** Content start here ******************************* --->
+  <div id="contents">
+       <!--<h4>&nbsp;</h4>-->
+    <center>
+        <img src="images/logo.jpg" width="50" hight="50">
+            <h1>FEDERAL UNIVERSITY WUKARI</h1>
+            
+        
+    <h4><strong>Second SEMESTER EXAM CARD</strong></h4>
+    <p align="left">
+    </p><center><table>
+		   		   <tbody><tr><th nowrap="nowrap">Reg/Matriculation No</th><td><b>ENG/COE/21/013</b></td><td rowspan="6" valign="top"><fieldset><legend><b>Passport</b></legend><img src="pictures/ENGCOE21013.jpg" alt="ENG/COE/21/013" width="150" height="150"></fieldset></td></tr>
+				   <tr><th>Full-Name</th><td nowrap="nowrap"><b>ABDULALIM, Abdulbasit </b></td></tr>
+				   <tr><th>Faculty</th><td nowrap="nowrap"><b>Engineering</b></td></tr>
+				   <tr><th>Department</th><td nowrap="nowrap"><b>Computer Engineering</b></td></tr>
+				   <tr><th>Programme</th><td nowrap="nowrap"><b>B.Eng. Computer Engineering</b></td></tr>
+				   <tr><th>Current Level</th><td><b>300</b></td></tr>
+				   </tbody></table></center>     <center>
+             
+    <table>
+                <tbody><tr> <th>Second Semester 2023/2024 Academic Session </th>
+                                         </tr><tr>
+                    <td>  <table>
+      
+        <tbody><tr>
+          <th>S/No</th>
+          <th>Code</th>
+          <th>Course Title</th>
+          <th>Unit</th>
+          <th>Status</th>
+          <th>Lecture's Sign</th>
+         <!-- <th>Semester</th>-->
+        </tr> <tr>
+                  <td>1</td>
+                  <td>COE300</td>
+                  <td>SWEP II</td>
+                  <td>2</td>
+                  <td>C</td>
+		  <td></td><!--<td>Second</td>-->
+                 </tr><tr>
+                  <td>2</td>
+                  <td>COE302</td>
+                  <td>Computer Engineering Laboratory II</td>
+                  <td>2</td>
+                  <td>C</td>
+		  <td></td><!--<td>Second</td>-->
+                 </tr><tr>
+                  <td>3</td>
+                  <td>COE304</td>
+                  <td>Software Development Techniques</td>
+                  <td>3</td>
+                  <td>C</td>
+		  <td></td><!--<td>Second</td>-->
+                 </tr><tr>
+                  <td>4</td>
+                  <td>COE306</td>
+                  <td>Programming Languages</td>
+                  <td>2</td>
+                  <td>C</td>
+		  <td></td><!--<td>Second</td>-->
+                 </tr><tr>
+                  <td>5</td>
+                  <td>EEE304</td>
+                  <td>Electromagnetic Fields and Waves</td>
+                  <td>3</td>
+                  <td>C</td>
+		  <td></td><!--<td>Second</td>-->
+                 </tr><tr>
+                  <td>6</td>
+                  <td>EEE306</td>
+                  <td>Communication Principles</td>
+                  <td>3</td>
+                  <td>C</td>
+		  <td></td><!--<td>Second</td>-->
+                 </tr><tr>
+                  <td>7</td>
+                  <td>EMA302</td>
+                  <td>Engineering Mathematics IV</td>
+                  <td>3</td>
+                  <td>R</td>
+		  <td></td><!--<td>Second</td>-->
+                 </tr><tr>
+                  <td>8</td>
+                  <td>GEN302</td>
+                  <td>Engineering Communication</td>
+                  <td>2</td>
+                  <td>R</td>
+		  <td></td><!--<td>Second</td>-->
+                 </tr><tr>
+                  <td>9</td>
+                  <td>GST302</td>
+                  <td>Introduction to Entrepreneurial Skills</td>
+                  <td>2</td>
+                  <td>C</td>
+		  <td></td><!--<td>Second</td>-->
+                 </tr> <tr>
+          
+          <th colspan="3"><div align="right"><strong>Total:</strong> </div></th>
+          <td><b>22</b></td>
+          <td colspan="3"></td>
+          
+        </tr>
+      </tbody></table></td> 
+                </tr>
+                           
+            </tbody></table>
+    <table width="50%">
+            <tbody><tr>
+              <td colspan="3"><p align="center"><strong>Examination Rules</strong>              </p>
+              <ul>
+                      <li>Candidate Shall be admitted into the Examination Hall 30 minutes to time of a paticular Examination.
+                      </li>
+                      <li> Candidates shall not be allowed into
+                        Examination Hall 30 minutes after the commencement
+                        of an Examination and shall not be allowed to leave the
+                        Hall 15 minutes to the end of an Examination.</li>
+                      <li> Candidates shall display their Exam Cards and
+                        identity Cards on their writing table during an
+                        Examination. </li>
+                      <li> Candidates are expected to bring all relevant
+                        materials into the examination hall as no
+                        communication or exchange shall be allowed during
+                        Examination. </li>
+                      <li> Candidates shall fill, sign in and sign out the
+                        Attendance sheet.</li>
+                      <li> Candidates shall hand over script to the
+                        invigilator(s) after Examination </li>
+                      <li> Candidates shall not be allowed to come into
+                        the
+                        Examination Hall with any implicating
+                        materials: Lecture
+                        notes, Text books, sophisicated calculating
+                        machines etc.
+                        viii. Violation of any examination rule is liable to
+                        disciplinary action.</li>
+                    </ul></td></tr>
+                <tr><td>_______________________</td><td>________________</td><td>_______________________</td></tr>
+                <tr align="center">
+      <td>Student</td><td>HOD</td><td>Exam Officer</td></tr>
+                
+    </tbody></table>
+               
+   
+    
+    
+   
+  <!--/div> 
+  <!-- end of div for contents -->
+  
+<!--/div> 
+<!-- end of div for container -->
+<!-- ************************** End of Contents ******************************* --->
+
+
+<!-- ************************** Start of footer ******************************* --->
+   
+ 
+ </center></center></div>
+<!-- end of div for container -->
+<!-- ************************** End of Contents ******************************* --->
+
+
+
+
+<!--<center><div id="footer" align="center">&copy; 2026. Federal University Wukari.</div></center>-->
+
+<!--<footer style="text-align:center">
+<span style="color:#FFF; text-align:center">&copy; 2026. Federal University Wukari.</span>
+    </footer>-->
+        
+<div id="footer" class="container-fluid">
+    <a href="#" style="float:left; color:green">Home</a>
+    <span class="pull-right" style="color: green">Fuwukari © 2026</span>
+</div>
+
+<div class="container-fluid" style="background-color:#FFF; height:100px">&nbsp;
+    <!--<a href="#">Home</a>
+    <span class="pull-right" style="color: #fff">Fuwukari &copy; 2017</span>-->
+</div>
+
+<!-- Include all compiled plugins (below), or include individual files as needed -->
+<script src="libs/bootstrap/js/bootstrap.min.js"></script><!-- ************************** End of footer ******************************* --->
+
+
+<div id="logout"></div>
+
+
+</body></html>
