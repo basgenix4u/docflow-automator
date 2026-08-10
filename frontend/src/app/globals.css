@@ -2,6 +2,12 @@
 
 @layer base {
   body {
-    @apply bg-slate-950 text-slate-100 antialiased font-sans;
+    @apply bg-emerald-950 text-slate-100 antialiased font-sans;
+    background-color: #022c22; /* Deep Forest Green */
   }
+}
+
+/* Custom Emerald Glow utilities */
+.emerald-glow {
+  box-shadow: 0 0 25px -5px rgba(16, 185, 129, 0.25);
 }
