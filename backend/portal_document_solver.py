@@ -37,9 +37,18 @@ async def run_portal_document_solver(
         browser = await p.chromium.launch(
             executable_path=CHROME_BIN,
             headless=True,
-            args=["--no-sandbox", "--disable-setuid-sandbox", "--disable-dev-shm-usage"]
+            args=[
+                "--no-sandbox",
+                "--disable-setuid-sandbox",
+                "--disable-dev-shm-usage",
+                "--disable-http2",  # Prevent SNI Misdirected Request 421 on ug.fuwportal.edu.ng
+                "--ignore-certificate-errors"
+            ]
         )
-        context = await browser.new_context(viewport={"width": 1280, "height": 900})
+        context = await browser.new_context(
+            viewport={"width": 1280, "height": 900},
+            ignore_https_errors=True
+        )
         page = await context.new_page()
 
         try:
