@@ -1,0 +1,103 @@
+import os
+import time
+from contextlib import asynccontextmanager
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+from sqlalchemy.future import select
+from app.core.config import settings
+from app.core.database import engine, Base, AsyncSessionLocal
+from app.core.security import hash_password
+from app.models.domain import User, Portal, Workflow
+from app.api import auth, portals, workflows, runs, documents, security
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Startup: create tables and seed default database records
+    async with engine.begin() as conn:
+        await conn.run_sync(Base.metadata.create_all)
+
+    async with AsyncSessionLocal() as session:
+        # Seed default admin user if not existing
+        res_user = await session.execute(select(User).where(User.email == "admin@docflow.io"))
+        if not res_user.scalars().first():
+            admin_user = User(
+                email="admin@docflow.io",
+                full_name="DocFlow Principal Admin",
+                hashed_password=hash_password("AdminPassword123!"),
+                role="ADMIN"
+            )
+            session.add(admin_user)
+
+        # Seed default FUW Portal
+        res_portal = await session.execute(select(Portal).where(Portal.base_url == settings.FUW_PORTAL_URL))
+        fuw_portal = res_portal.scalars().first()
+        if not fuw_portal:
+            fuw_portal = Portal(
+                name="Federal University Wukari — Student Portal",
+                base_url=settings.FUW_PORTAL_URL,
+                auth_type="FORM",
+                username_field="userId",
+                password_field="password",
+                demo_username=settings.DEFAULT_DEMO_USERNAME,
+                demo_password=settings.DEFAULT_DEMO_PASSWORD,
+                status="ACTIVE"
+            )
+            session.add(fuw_portal)
+            await session.commit()
+            await session.refresh(fuw_portal)
+
+        # Seed default FUW Student Verification Workflow
+        res_wf = await session.execute(select(Workflow).where(Workflow.portal_id == fuw_portal.id))
+        if not res_wf.scalars().first():
+            fuw_workflow = Workflow(
+                portal_id=fuw_portal.id,
+                name="FUW Student Portal Automated Verification & A4 Report Generation",
+                description="Automates login with demo credentials, extracts student profile data (Name, Matric No, Faculty, Department, Level, Adviser), and exports an A4 verification PDF document.",
+                steps_json='[{"action": "navigate", "value": "https://ug.fuwportal.edu.ng/index.php"}, {"action": "fill", "selector": "#userId", "value": "$USERNAME"}, {"action": "fill", "selector": "#password", "value": "$PASSWORD"}, {"action": "click", "selector": "button, input[type=\'submit\']"}, {"action": "wait", "value": "4000"}]',
+                target_format="A4"
+            )
+            session.add(fuw_workflow)
+
+        await session.commit()
+
+    yield
+    # Shutdown
+
+app = FastAPI(
+    title="DocFlow Automator API Engine",
+    version="1.0.0",
+    description="Browser Automation, Dynamic Document Processing & Portal Security Testing API",
+    lifespan=lifespan
+)
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+# Register Routers
+app.include_router(auth.router)
+app.include_router(portals.router)
+app.include_router(workflows.router)
+app.include_router(runs.router)
+app.include_router(documents.router)
+app.include_router(security.router)
+
+@app.get("/api/v1/health")
+async def health_check():
+    return {
+        "status": "online",
+        "system": "DocFlow Automator AI Software Factory Engine",
+        "timestamp": time.strftime("%Y-%m-%d %H:%M:%S"),
+        "target_portal": settings.FUW_PORTAL_URL,
+        "demo_user": settings.DEFAULT_DEMO_USERNAME,
+        "storage_dir": settings.STORAGE_DIR,
+        "storage_ready": os.path.exists(settings.STORAGE_DIR)
+    }
+
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run("main:app", host=settings.HOST, port=settings.PORT, reload=settings.DEBUG)

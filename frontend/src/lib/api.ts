@@ -1,0 +1,56 @@
+import {
+  HealthCheckResponse,
+  Portal,
+  Workflow,
+  WorkflowRun,
+  Document,
+  SecurityScan
+} from "@/types";
+
+const API_BASE = "http://127.0.0.1:8000/api/v1";
+
+async function fetchJson<T>(url: string, options?: RequestInit): Promise<T> {
+  const res = await fetch(`${API_BASE}${url}`, {
+    ...options,
+    headers: {
+      "Content-Type": "application/json",
+      ...(options?.headers || {}),
+    },
+  });
+  if (!res.ok) {
+    const errorText = await res.text();
+    throw new Error(`API Error [${res.status}]: ${errorText}`);
+  }
+  return res.json();
+}
+
+export const api = {
+  getHealth: () => fetchJson<HealthCheckResponse>("/health"),
+
+  // Portals
+  getPortals: () => fetchJson<Portal[]>("/portals/"),
+  createPortal: (data: Partial<Portal>) => fetchJson<Portal>("/portals/", { method: "POST", body: JSON.stringify(data) }),
+  testPortalAuth: (id: string) => fetchJson<any>(`/portals/${id}/test-auth`, { method: "POST" }),
+
+  // Workflows
+  getWorkflows: () => fetchJson<Workflow[]>("/workflows/"),
+  createWorkflow: (data: any) => fetchJson<Workflow>("/workflows/", { method: "POST", body: JSON.stringify(data) }),
+  runWorkflow: (id: string, credentials?: { custom_username?: string; custom_password?: string }) =>
+    fetchJson<WorkflowRun>(`/workflows/${id}/run`, { method: "POST", body: JSON.stringify(credentials || {}) }),
+
+  // Runs
+  getRuns: () => fetchJson<WorkflowRun[]>("/runs/"),
+  getRun: (id: string) => fetchJson<WorkflowRun>(`/runs/${id}`),
+  getRunLogs: (id: string) => fetchJson<{ run_id: string; status: string; logs: any[] }>(`/runs/${id}/logs`),
+
+  // Documents
+  getDocuments: () => fetchJson<Document[]>("/documents/"),
+  renderPdf: (title: string, html_content: string, page_format = "A4") =>
+    fetchJson<Document>("/documents/render-pdf", { method: "POST", body: JSON.stringify({ title, html_content, page_format }) }),
+  getDownloadUrl: (id: string) => `${API_BASE}/documents/${id}/download`,
+
+  // Security
+  getSecurityScans: () => fetchJson<SecurityScan[]>("/security/"),
+  triggerSecurityScan: (portal_id: string) =>
+    fetchJson<SecurityScan>("/security/scan", { method: "POST", body: JSON.stringify({ portal_id }) }),
+};
