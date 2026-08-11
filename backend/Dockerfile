@@ -2,6 +2,10 @@ FROM python:3.13-slim
 
 WORKDIR /app
 
+# Ensure Playwright browser installation directory is deterministic across container runners
+ENV PLAYWRIGHT_BROWSERS_PATH=/root/.cache/ms-playwright
+ENV PYTHONUNBUFFERED=1
+
 RUN apt-get update && apt-get install -y \
     wget \
     curl \
@@ -11,7 +15,7 @@ RUN apt-get update && apt-get install -y \
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Install Playwright chromium AND all system dependencies
+# Install Playwright chromium AND all system dependencies into PLAYWRIGHT_BROWSERS_PATH
 RUN playwright install chromium --with-deps
 
 COPY . .
