@@ -1,4 +1,5 @@
 from urllib.parse import urlparse, parse_qs, urlencode, urlunparse
+from sqlalchemy import text
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sessionmaker
 from sqlalchemy.orm import declarative_base
 from app.core.config import settings
@@ -39,11 +40,23 @@ def prepare_async_db_url(url_str: str) -> tuple[str, dict]:
 
 db_url, connect_args = prepare_async_db_url(settings.DATABASE_URL)
 
-engine = create_async_engine(
-    db_url,
-    echo=settings.DEBUG,
-    connect_args=connect_args
-)
+# Production-grade async engine configuration for cloud PostgreSQL & Neon
+is_sqlite = "sqlite" in db_url
+engine_kwargs = {
+    "echo": settings.DEBUG,
+    "connect_args": connect_args,
+}
+
+if not is_sqlite:
+    engine_kwargs.update({
+        "pool_pre_ping": True,       # Tests connection liveness before handing out pooled connection
+        "pool_recycle": 300,         # Recycles idle connections every 5 minutes to prevent stale proxy drops
+        "pool_size": 10,             # Production connection pool size
+        "max_overflow": 20,          # Temporary overflow capacity under high concurrency
+        "pool_timeout": 30,          # Seconds to wait for available connection
+    })
+
+engine = create_async_engine(db_url, **engine_kwargs)
 
 AsyncSessionLocal = async_sessionmaker(
     bind=engine,
@@ -56,8 +69,27 @@ AsyncSessionLocal = async_sessionmaker(
 Base = declarative_base()
 
 async def get_db():
+    """
+    Request-scoped AsyncSession generator with automatic transaction cleanup and session disposal.
+    """
     async with AsyncSessionLocal() as session:
         try:
             yield session
+            await session.commit()
+        except Exception:
+            await session.rollback()
+            raise
         finally:
             await session.close()
+
+async def check_database_health() -> bool:
+    """
+    Lightweight DB health check verifying connection liveness using SELECT 1.
+    """
+    try:
+        async with AsyncSessionLocal() as session:
+            await session.execute(text("SELECT 1"))
+            return True
+    except Exception as e:
+        print("Database health check error:", e)
+        return False
