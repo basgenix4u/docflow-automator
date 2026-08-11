@@ -14,7 +14,7 @@ from app.schemas.dto import PDFRenderRequest, DocumentResponse
 from app.services.pdf_exporter import render_html_to_pdf
 from portal_document_solver import run_portal_document_solver
 
-router = APIRouter(prefix="/api/v1/documents", tags=["Documents"])
+router = APIRouter(tags=["Documents"])
 
 if settings.CLOUDINARY_CLOUD_NAME:
     cloudinary.config(
@@ -30,21 +30,17 @@ class AutoGenerateRequest(BaseModel):
     document_type: str = "exam" # exam, crg, rec, result
     paper_format: str = "A5"
 
-@router.get("/", response_model=List[DocumentResponse])
+@router.get("/documents/", response_model=List[DocumentResponse])
+@router.get("/api/documents/", response_model=List[DocumentResponse])
+@router.get("/api/v1/documents/", response_model=List[DocumentResponse])
 async def list_documents(db: AsyncSession = Depends(get_db)):
     result = await db.execute(select(Document).order_by(Document.created_at.desc()))
     return result.scalars().all()
 
-@router.post("/auto-generate")
+@router.post("/documents/auto-generate")
+@router.post("/api/documents/auto-generate")
+@router.post("/api/v1/documents/auto-generate")
 async def auto_generate_document(req: AutoGenerateRequest):
-    """
-    Decoupled Production Architecture:
-    1. Perform Playwright automation & PDF rendering FIRST (Zero DB session checked out).
-    2. Perform Cloudinary upload SECOND (Zero DB session checked out).
-    3. Acquire a FRESH short-lived AsyncSession THIRD.
-    4. Execute INSERT + COMMIT in a 10ms transaction.
-    5. Close and release session immediately.
-    """
     if not req.username or not req.password:
         raise HTTPException(status_code=400, detail="Student User ID and password are required.")
 
@@ -59,7 +55,6 @@ async def auto_generate_document(req: AutoGenerateRequest):
     safe_name = req.username.replace('/', '_')
     out_filename = f"FUW_{req.document_type.upper()}_{safe_name}_{req.paper_format.upper()}.pdf"
 
-    # STAGE 1: Long-running Playwright Automation (NO DB SESSION OPEN)
     pdf_path = await run_portal_document_solver(
         username=req.username,
         password=req.password,
@@ -77,7 +72,6 @@ async def auto_generate_document(req: AutoGenerateRequest):
     file_size = os.path.getsize(pdf_path)
     cloudinary_url = ""
 
-    # STAGE 2: External Cloudinary Upload (NO DB SESSION OPEN)
     if settings.CLOUDINARY_CLOUD_NAME and settings.CLOUDINARY_API_KEY:
         try:
             upload_res = cloudinary.uploader.upload(
@@ -90,7 +84,6 @@ async def auto_generate_document(req: AutoGenerateRequest):
         except Exception as e:
             print("Cloudinary upload notice:", e)
 
-    # STAGE 3: Fresh, Short-Lived Database Transaction (Acquire -> Insert -> Commit -> Close)
     async with AsyncSessionLocal() as db_session:
         try:
             doc = Document(
@@ -124,7 +117,9 @@ async def auto_generate_document(req: AutoGenerateRequest):
         "cloudinary_url": cloudinary_url
     }
 
-@router.get("/{document_id}/view")
+@router.get("/documents/{document_id}/view")
+@router.get("/api/documents/{document_id}/view")
+@router.get("/api/v1/documents/{document_id}/view")
 async def view_document_inline(document_id: str, db: AsyncSession = Depends(get_db)):
     result = await db.execute(select(Document).where(Document.id == document_id))
     doc = result.scalars().first()
@@ -144,7 +139,9 @@ async def view_document_inline(document_id: str, db: AsyncSession = Depends(get_
         headers={"Content-Disposition": f'inline; filename="{filename}"'}
     )
 
-@router.get("/{document_id}/download")
+@router.get("/documents/{document_id}/download")
+@router.get("/api/documents/{document_id}/download")
+@router.get("/api/v1/documents/{document_id}/download")
 async def download_document(document_id: str, db: AsyncSession = Depends(get_db)):
     result = await db.execute(select(Document).where(Document.id == document_id))
     doc = result.scalars().first()
