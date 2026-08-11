@@ -16,7 +16,7 @@ async def run_portal_document_solver(
     """
     Production-Grade Autonomous Portal Document Engine:
     - Stable Linux Chromium flags.
-    - Pre-clears session lock.
+    - Pre-clears session lock with auto-retry.
     - Authenticates & asserts session handshake on main.php.
     - Navigates to requested document type.
     - Intercepts target webview (e.g. course_registration_printout.php / exam_card_printout.php).
@@ -38,7 +38,6 @@ async def run_portal_document_solver(
     logger.info(f"User ID: {username} | Doc Type: {document_type} | Paper: {paper_format} | Output: {pdf_full_path}")
 
     async with async_playwright() as p:
-        # Stable Linux flags (omitting deprecated --single-process)
         launch_args = [
             "--no-sandbox",
             "--disable-setuid-sandbox",
@@ -70,53 +69,60 @@ async def run_portal_document_solver(
             except Exception as e:
                 logger.debug(f"Pre-clear notice: {e}")
 
-            # Step 2: Authentication
-            logger.info(f"2. Authenticating as {username}...")
-            await page.goto("https://ug.fuwportal.edu.ng/index.php", wait_until="domcontentloaded", timeout=15000)
-            await page.fill("#userId", username)
-            await page.fill("#password", password)
+            # Step 2: Authentication Loop with Retry
+            authenticated = False
+            attempts = 0
+            max_attempts = 4
 
-            login_btn = await page.query_selector("button, input[type='submit'], input[type='button'], a.btn")
-            if login_btn:
-                await login_btn.click()
-            else:
-                await page.press("#password", "Enter")
-
-            await page.wait_for_timeout(3000)
-
-            body_text = await page.inner_text("body")
-            if "logged in on another device" in body_text:
-                logger.warning("--> Session lock active. Clearing session...")
-                await page.evaluate("if (typeof $ === 'function') $.post('scriptfile_a.php', { contentvar: 'logout' });")
-                await page.wait_for_timeout(3000)
-                await page.goto("https://ug.fuwportal.edu.ng/index.php", wait_until="domcontentloaded")
+            while not authenticated and attempts < max_attempts:
+                attempts += 1
+                logger.info(f"2. [Attempt {attempts}/{max_attempts}] Authenticating as {username}...")
+                await page.goto("https://ug.fuwportal.edu.ng/index.php", wait_until="domcontentloaded", timeout=15000)
                 await page.fill("#userId", username)
                 await page.fill("#password", password)
-                retry_btn = await page.query_selector("button, input[type='submit'], input[type='button'], a.btn")
-                if retry_btn:
-                    await retry_btn.click()
+
+                login_btn = await page.query_selector("button, input[type='submit'], input[type='button'], a.btn")
+                if login_btn:
+                    await login_btn.click()
                 else:
                     await page.press("#password", "Enter")
+
                 await page.wait_for_timeout(3000)
 
-            logger.info("--> Login Successful! Navigating to main.php...")
-            await page.goto("https://ug.fuwportal.edu.ng/main.php", wait_until="domcontentloaded", timeout=15000)
-            await page.wait_for_timeout(1500)
+                body_text = await page.inner_text("body")
+                if "Logout" in body_text or "MAIN MENU" in body_text or "PERSONAL SETUP" in body_text or "ABDULALIM" in body_text or "IBRAHIM" in body_text:
+                    logger.info("--> Authentication Successful!")
+                    authenticated = True
+                elif "logged in on another device" in body_text:
+                    logger.warning("--> Session lock active on server. Executing logout clearance and waiting 5s...")
+                    try:
+                        await page.evaluate("if (typeof $ === 'function') $.post('scriptfile_a.php', { contentvar: 'logout' });")
+                    except Exception:
+                        pass
+                    await page.wait_for_timeout(5000)
 
-            # Step 3: Navigate to Document Service Page
+            if not authenticated:
+                raise Exception(f"Failed to authenticate user {username} within attempt limit.")
+
+            # Step 3: Mandatory main.php Session Handshake
+            logger.info("3. Executing main.php session cookie handshake...")
+            await page.goto("https://ug.fuwportal.edu.ng/main.php", wait_until="domcontentloaded", timeout=15000)
+            await page.wait_for_timeout(2000)
+
+            # Step 4: Navigate to Document Service Page
             target_url = f"https://ug.fuwportal.edu.ng/print_course_form.php?id={document_type}&r_val=U3R1ZGVudA=="
-            logger.info(f"3. Navigating to document service URL: {target_url}...")
+            logger.info(f"4. Navigating to document service URL: {target_url}...")
 
             action_link = await page.query_selector(f"a[href*='id={document_type}']")
             if action_link:
                 await page.evaluate("el => el.click()", action_link)
-                await page.wait_for_timeout(2000)
+                await page.wait_for_timeout(2500)
             else:
                 await page.goto(target_url, wait_until="domcontentloaded", timeout=15000)
-                await page.wait_for_timeout(2000)
+                await page.wait_for_timeout(2500)
 
-            # Step 4: Auto-Fill Session & Semester Dropdowns
-            logger.info("4. Auto-filling session and semester dropdowns...")
+            # Step 5: Auto-Fill Session & Semester Dropdowns
+            logger.info("5. Auto-filling session and semester dropdowns...")
             session_select = await page.query_selector("select[name*='session'], select[id*='session']")
             if session_select:
                 options = await session_select.query_selector_all("option")
@@ -135,8 +141,8 @@ async def run_portal_document_solver(
                     logger.info(f"--> Selected Semester: '{opt_text}' ({first_val})")
                     await semester_select.select_option(first_val)
 
-            # Step 5: Submit & Intercept Webview Popup Window
-            logger.info("5. Submitting form and intercepting target webview...")
+            # Step 6: Submit & Intercept Webview Popup Window
+            logger.info("6. Submitting form and intercepting target webview...")
             submit_btn = await page.query_selector("input[type='submit'], button[type='submit'], input[value*='Print'], input[value*='Submit'], input[value*='Generate']")
 
             popup_page = None
@@ -151,16 +157,16 @@ async def run_portal_document_solver(
 
             target_page = popup_page if popup_page else page
             await target_page.wait_for_load_state("domcontentloaded")
-            await target_page.wait_for_timeout(2000)
+            await target_page.wait_for_timeout(2500)
 
-            # Step 6: Webview Target URL Assertion
+            # Step 7: Webview Target URL Assertion
             captured_url = target_page.url
-            logger.info(f"6. Asserting Target Webview URL: {captured_url}")
+            logger.info(f"7. Asserting Target Webview URL: {captured_url}")
 
             if "index.php" in captured_url:
                 raise Exception("Target URL redirected to index.php (login screen). Capture rejected.")
 
-            # Step 7: Measure DOM Height & Calculate Fit-to-Page Scale
+            # Step 8: Measure DOM Height & Calculate Fit-to-Page Scale
             try:
                 dims = await target_page.evaluate("""() => {
                     const body = document.body || {};
@@ -182,7 +188,7 @@ async def run_portal_document_solver(
 
             logger.info(f"--> DOM Height = {doc_height}px | Printable {paper_format} Height = {target_printable_height}px | Fit Scale = {fit_scale:.4f}")
 
-            # Step 8: Inject Print Isolation CSS & Export PDF
+            # Step 9: Inject Print Isolation CSS & Export PDF
             await target_page.add_style_tag(content=f"""
                 @page {{
                     size: {paper_format} portrait;
@@ -224,7 +230,7 @@ async def run_portal_document_solver(
                 }}
             """)
 
-            logger.info(f"7. Exporting 1-Page {paper_format} PDF: {pdf_full_path}")
+            logger.info(f"8. Exporting 1-Page {paper_format} PDF: {pdf_full_path}")
             await target_page.pdf(
                 path=pdf_full_path,
                 format=paper_format,
@@ -241,10 +247,10 @@ async def run_portal_document_solver(
             return None
 
         finally:
-            logger.info("8. Executing immediate session logout clearance...")
+            logger.info("9. Executing immediate session logout clearance...")
             try:
                 await page.evaluate("if (typeof $ === 'function') $.post('scriptfile_a.php', { contentvar: 'logout' });")
-                await page.wait_for_timeout(500)
+                await page.wait_for_timeout(1000)
             except Exception:
                 pass
             await browser.close()
