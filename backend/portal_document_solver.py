@@ -53,24 +53,33 @@ async def run_portal_document_solver(
     logger.info(f"User ID: {username} | Doc Type: {document_type} | Paper: {paper_format} | Output: {pdf_full_path}")
     if chrome_bin:
         logger.info(f"Using Chromium binary: {chrome_bin}")
-    else:
-        logger.info("No explicit Chromium binary path matched; relying on Playwright default launcher.")
 
     async with async_playwright() as p:
-        launch_kwargs = {
-            "headless": True,
-            "args": [
-                "--no-sandbox",
-                "--disable-setuid-sandbox",
-                "--disable-dev-shm-usage",
-                "--disable-http2",  # Prevent SNI 421 Misdirected Request errors
-                "--ignore-certificate-errors"
-            ]
-        }
-        if chrome_bin:
-            launch_kwargs["executable_path"] = chrome_bin
+        launch_args = [
+            "--no-sandbox",
+            "--disable-setuid-sandbox",
+            "--disable-dev-shm-usage",
+            "--disable-gpu",
+            "--disable-software-rasterizer",
+            "--disable-http2",  # Prevent SNI 421 Misdirected Request errors
+            "--ignore-certificate-errors"
+        ]
 
-        browser = await p.chromium.launch(**launch_kwargs)
+        # First try with detected chrome binary
+        browser = None
+        if chrome_bin:
+            try:
+                browser = await p.chromium.launch(
+                    executable_path=chrome_bin,
+                    headless=True,
+                    args=launch_args
+                )
+            except Exception as e:
+                logger.warning(f"Explicit binary launch failed, falling back to default Playwright browser: {e}")
+
+        if not browser:
+            browser = await p.chromium.launch(headless=True, args=launch_args)
+
         context = await browser.new_context(
             viewport={"width": 1280, "height": 900},
             ignore_https_errors=True

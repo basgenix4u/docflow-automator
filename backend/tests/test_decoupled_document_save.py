@@ -6,8 +6,8 @@ from app.main import app
 async def test_auto_generate_decoupled_document_pipeline():
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as ac:
         payload = {
-            "username": "ENG/COE/21/013",
-            "password": "olaleke",
+            "username": "BSC/BCH/24/140",
+            "password": "Omotola",
             "document_type": "crg",
             "paper_format": "A4"
         }
