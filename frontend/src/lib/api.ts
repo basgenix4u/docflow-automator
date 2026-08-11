@@ -11,40 +11,36 @@ const API_BASE = process.env.NEXT_PUBLIC_API_URL || "/api/v1";
 
 async function fetchJson<T>(url: string, options?: RequestInit): Promise<T> {
   const fullUrl = url.startsWith("http") ? url : `${API_BASE}${url}`;
-  let attempts = 0;
-  let lastError: any = null;
+  const isPost = options?.method === "POST";
 
-  while (attempts < 3) {
-    attempts++;
-    try {
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 60000); // 60s timeout for Render cold starts
+  // For POST document generation, use 90s single request timeout (no concurrent duplicate retries)
+  const controller = new AbortController();
+  const timeoutMs = isPost ? 90000 : 30000;
+  const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
 
-      const res = await fetch(fullUrl, {
-        ...options,
-        signal: controller.signal,
-        headers: {
-          "Content-Type": "application/json",
-          ...(options?.headers || {}),
-        },
-      });
-      clearTimeout(timeoutId);
+  try {
+    const res = await fetch(fullUrl, {
+      ...options,
+      signal: controller.signal,
+      headers: {
+        "Content-Type": "application/json",
+        ...(options?.headers || {}),
+      },
+    });
+    clearTimeout(timeoutId);
 
-      if (!res.ok) {
-        const errorText = await res.text();
-        throw new Error(`API Error [${res.status}]: ${errorText}`);
-      }
-      return res.json();
-    } catch (err: any) {
-      lastError = err;
-      if (attempts < 3) {
-        await new Promise((resolve) => setTimeout(resolve, 2000));
-      }
+    if (!res.ok) {
+      const errorText = await res.text();
+      throw new Error(`API Error [${res.status}]: ${errorText}`);
     }
+    return res.json();
+  } catch (err: any) {
+    clearTimeout(timeoutId);
+    if (err.name === "AbortError") {
+      throw new Error("Portal automation execution timed out. Please retry.");
+    }
+    throw new Error(err.message || "Failed to connect to backend engine.");
   }
-  throw new Error(
-    lastError?.message || "Failed to connect to backend engine. Please check backend server status."
-  );
 }
 
 export const api = {
