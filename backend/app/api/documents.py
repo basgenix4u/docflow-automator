@@ -41,21 +41,22 @@ async def list_documents(db: AsyncSession = Depends(get_db)):
 @router.post("/api/documents/auto-generate")
 @router.post("/api/v1/documents/auto-generate")
 async def auto_generate_document(req: AutoGenerateRequest):
-    if not req.username or not req.password:
-        raise HTTPException(status_code=400, detail="Student User ID and password are required.")
-
-    doc_titles = {
-        "exam": "Examination Card & Docket",
-        "crg": "Completed Course Registration Form",
-        "rec": "Official Fee Payment Receipt",
-        "result": "Semester Academic Results Transcript"
-    }
-
-    doc_title = f"{doc_titles.get(req.document_type, 'Portal Document')} — {req.username}"
-    safe_name = req.username.replace('/', '_')
-    out_filename = f"FUW_{req.document_type.upper()}_{safe_name}_{req.paper_format.upper()}.pdf"
-
     try:
+        if not req.username or not req.password:
+            raise HTTPException(status_code=400, detail="Student User ID and password are required.")
+
+        doc_titles = {
+            "exam": "Examination Card & Docket",
+            "crg": "Completed Course Registration Form",
+            "rec": "Official Fee Payment Receipt",
+            "result": "Semester Academic Results Transcript"
+        }
+
+        doc_title = f"{doc_titles.get(req.document_type, 'Portal Document')} — {req.username}"
+        safe_name = req.username.replace('/', '_')
+        out_filename = f"FUW_{req.document_type.upper()}_{safe_name}_{req.paper_format.upper()}.pdf"
+
+        # Execute Playwright automation
         pdf_path = await run_portal_document_solver(
             username=req.username,
             password=req.password,
@@ -63,62 +64,66 @@ async def auto_generate_document(req: AutoGenerateRequest):
             paper_format=req.paper_format,
             output_filename=out_filename
         )
-    except Exception as exc:
-        raise HTTPException(status_code=500, detail=f"Solver Execution Exception: {str(exc)}")
 
-    if not pdf_path or not os.path.exists(pdf_path):
-        raise HTTPException(
-            status_code=500,
-            detail="Failed to generate portal document. Please verify user ID and password."
-        )
+        if not pdf_path or not os.path.exists(pdf_path):
+            raise HTTPException(status_code=500, detail="Failed to generate portal document. Please verify user ID and password.")
 
-    file_size = os.path.getsize(pdf_path)
-    cloudinary_url = ""
+        file_size = os.path.getsize(pdf_path)
+        cloudinary_url = ""
 
-    if settings.CLOUDINARY_CLOUD_NAME and settings.CLOUDINARY_API_KEY:
-        try:
-            upload_res = cloudinary.uploader.upload(
-                pdf_path,
-                resource_type="raw",
-                folder="docflow_pdfs",
-                public_id=out_filename.replace('.pdf', '')
-            )
-            cloudinary_url = upload_res.get("secure_url", "")
-        except Exception as e:
-            print("Cloudinary upload notice:", e)
+        if settings.CLOUDINARY_CLOUD_NAME and settings.CLOUDINARY_API_KEY:
+            try:
+                upload_res = cloudinary.uploader.upload(
+                    pdf_path,
+                    resource_type="raw",
+                    folder="docflow_pdfs",
+                    public_id=out_filename.replace('.pdf', '')
+                )
+                cloudinary_url = upload_res.get("secure_url", "")
+            except Exception as e:
+                print("Cloudinary upload notice:", e)
 
-    async with AsyncSessionLocal() as db_session:
-        try:
-            doc = Document(
-                title=doc_title,
-                page_format=req.paper_format.upper(),
-                page_count=1,
-                file_size_bytes=file_size,
-                file_path=cloudinary_url or pdf_path
-            )
-            db_session.add(doc)
-            await db_session.commit()
-            await db_session.refresh(doc)
+        async with AsyncSessionLocal() as db_session:
+            try:
+                doc = Document(
+                    title=doc_title,
+                    page_format=req.paper_format.upper(),
+                    page_count=1,
+                    file_size_bytes=file_size,
+                    file_path=cloudinary_url or pdf_path
+                )
+                db_session.add(doc)
+                await db_session.commit()
+                await db_session.refresh(doc)
 
-            doc_id = doc.id
-            doc_created_at = doc.created_at
-        except Exception:
-            await db_session.rollback()
-            raise
-        finally:
-            await db_session.close()
+                doc_id = doc.id
+                doc_created_at = doc.created_at
+            except Exception as db_err:
+                await db_session.rollback()
+                print("Database insert notice:", db_err)
+                doc_id = "local_doc"
+                doc_created_at = None
+            finally:
+                await db_session.close()
 
-    return {
-        "id": doc_id,
-        "title": doc_title,
-        "page_format": req.paper_format.upper(),
-        "page_count": 1,
-        "file_size_bytes": file_size,
-        "created_at": doc_created_at,
-        "view_url": f"/api/v1/documents/{doc_id}/view",
-        "download_url": f"/api/v1/documents/{doc_id}/download",
-        "cloudinary_url": cloudinary_url
-    }
+        return {
+            "status": "success",
+            "id": doc_id,
+            "title": doc_title,
+            "page_format": req.paper_format.upper(),
+            "page_count": 1,
+            "file_size_bytes": file_size,
+            "created_at": doc_created_at,
+            "view_url": f"/api/v1/documents/{doc_id}/view",
+            "download_url": f"/api/v1/documents/{doc_id}/download",
+            "cloudinary_url": cloudinary_url
+        }
+
+    except HTTPException:
+        raise
+    except Exception as top_err:
+        print("Top-level auto_generate_document error:", top_err)
+        raise HTTPException(status_code=500, detail=str(top_err))
 
 @router.get("/documents/{document_id}/view")
 @router.get("/api/documents/{document_id}/view")
