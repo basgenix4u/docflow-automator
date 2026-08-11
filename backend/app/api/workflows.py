@@ -1,13 +1,12 @@
 import json
-from datetime import datetime, timezone
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from typing import List
 from app.core.database import get_db
-from app.models.domain import Workflow, Portal, WorkflowRun, Document
+from app.models.domain import Workflow, Portal, WorkflowRun, Document, utc_now
 from app.schemas.dto import WorkflowCreate, WorkflowResponse, RunExecuteRequest, RunResponse
-from popup_exam_card_solver import run_popup_exam_card_solver
+from portal_document_solver import run_portal_document_solver
 from app.services.browser_engine import execute_custom_workflow
 
 router = APIRouter(prefix="/api/v1/workflows", tags=["Workflows"])
@@ -52,7 +51,6 @@ async def run_workflow(
     p_result = await db.execute(select(Portal).where(Portal.id == workflow.portal_id))
     portal = p_result.scalars().first()
 
-    # Dynamic credentials supplied by user
     user_id = req.custom_username if req and req.custom_username else (portal.demo_username if portal else None)
     password = req.custom_password if req and req.custom_password else (portal.demo_password if portal else None)
 
@@ -65,7 +63,7 @@ async def run_workflow(
     run = WorkflowRun(
         workflow_id=workflow.id,
         status="RUNNING",
-        started_at=datetime.now(timezone.utc)
+        started_at=utc_now()
     )
     db.add(run)
     await db.commit()
@@ -74,7 +72,7 @@ async def run_workflow(
     safe_name = user_id.replace('/', '_')
     out_pdf_name = f"FUW_ExamCard_{safe_name}_{workflow.target_format or 'A5'}.pdf"
 
-    pdf_path = await run_popup_exam_card_solver(
+    pdf_path = await run_portal_document_solver(
         username=user_id,
         password=password,
         output_filename=out_pdf_name
@@ -83,8 +81,8 @@ async def run_workflow(
     is_success = bool(pdf_path)
     run.status = "COMPLETED" if is_success else "FAILED"
     run.execution_logs = json.dumps([
-        {"timestamp": datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S"), "level": "INFO", "message": f"Execution started for user {user_id}"},
-        {"timestamp": datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S"), "level": "INFO" if is_success else "ERROR", "message": f"PDF generated: {pdf_path}" if is_success else "Automation failed to capture webview"}
+        {"timestamp": utc_now().strftime("%Y-%m-%d %H:%M:%S"), "level": "INFO", "message": f"Execution started for user {user_id}"},
+        {"timestamp": utc_now().strftime("%Y-%m-%d %H:%M:%S"), "level": "INFO" if is_success else "ERROR", "message": f"PDF generated: {pdf_path}" if is_success else "Automation failed to capture webview"}
     ])
     run.extracted_data_json = json.dumps({
         "student_id": user_id,
@@ -92,7 +90,7 @@ async def run_workflow(
         "pdf_path": pdf_path
     })
     run.error_message = None if is_success else "Automation failed on target portal"
-    run.completed_at = datetime.now(timezone.utc)
+    run.completed_at = utc_now()
 
     if is_success and pdf_path:
         doc = Document(
