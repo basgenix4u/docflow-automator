@@ -11,18 +11,40 @@ const API_BASE = process.env.NEXT_PUBLIC_API_URL || "/api/v1";
 
 async function fetchJson<T>(url: string, options?: RequestInit): Promise<T> {
   const fullUrl = url.startsWith("http") ? url : `${API_BASE}${url}`;
-  const res = await fetch(fullUrl, {
-    ...options,
-    headers: {
-      "Content-Type": "application/json",
-      ...(options?.headers || {}),
-    },
-  });
-  if (!res.ok) {
-    const errorText = await res.text();
-    throw new Error(`API Error [${res.status}]: ${errorText}`);
+  let attempts = 0;
+  let lastError: any = null;
+
+  while (attempts < 3) {
+    attempts++;
+    try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 60000); // 60s timeout for Render cold starts
+
+      const res = await fetch(fullUrl, {
+        ...options,
+        signal: controller.signal,
+        headers: {
+          "Content-Type": "application/json",
+          ...(options?.headers || {}),
+        },
+      });
+      clearTimeout(timeoutId);
+
+      if (!res.ok) {
+        const errorText = await res.text();
+        throw new Error(`API Error [${res.status}]: ${errorText}`);
+      }
+      return res.json();
+    } catch (err: any) {
+      lastError = err;
+      if (attempts < 3) {
+        await new Promise((resolve) => setTimeout(resolve, 2000));
+      }
+    }
   }
-  return res.json();
+  throw new Error(
+    lastError?.message || "Failed to connect to backend engine. Please check backend server status."
+  );
 }
 
 export const api = {
