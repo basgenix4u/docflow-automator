@@ -6,21 +6,6 @@ from app.core.config import settings
 
 logger = logging.getLogger("portal_document_solver")
 
-POSSIBLE_CHROME_BINS = [
-    "/usr/bin/chromium",
-    "/usr/bin/chromium-browser",
-    "/usr/bin/google-chrome",
-    "/root/.cache/ms-playwright/chromium-1155/chrome-linux/chrome",
-    "/root/.cache/ms-playwright/chromium-1234/chrome-linux64/chrome",
-    "/home/user/.cache/ms-playwright/chromium-1155/chrome-linux/chrome",
-]
-
-def get_chrome_executable():
-    for path in POSSIBLE_CHROME_BINS:
-        if os.path.isfile(path) and os.access(path, os.X_OK):
-            return path
-    return None
-
 async def run_portal_document_solver(
     username: str,
     password: str,
@@ -48,11 +33,8 @@ async def run_portal_document_solver(
 
     pdf_full_path = os.path.join(out_dir, output_filename)
 
-    chrome_bin = get_chrome_executable()
     logger.info(f"=== PRODUCTION PORTAL SOLVER INITIALIZED ===")
     logger.info(f"User ID: {username} | Doc Type: {document_type} | Paper: {paper_format} | Output: {pdf_full_path}")
-    if chrome_bin:
-        logger.info(f"Using Chromium binary: {chrome_bin}")
 
     async with async_playwright() as p:
         launch_args = [
@@ -65,20 +47,11 @@ async def run_portal_document_solver(
             "--ignore-certificate-errors"
         ]
 
-        # First try with detected chrome binary
-        browser = None
-        if chrome_bin:
-            try:
-                browser = await p.chromium.launch(
-                    executable_path=chrome_bin,
-                    headless=True,
-                    args=launch_args
-                )
-            except Exception as e:
-                logger.warning(f"Explicit binary launch failed, falling back to default Playwright browser: {e}")
-
-        if not browser:
-            browser = await p.chromium.launch(headless=True, args=launch_args)
+        # Use Playwright default bundled chromium
+        browser = await p.chromium.launch(
+            headless=True,
+            args=launch_args
+        )
 
         context = await browser.new_context(
             viewport={"width": 1280, "height": 900},
