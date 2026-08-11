@@ -14,12 +14,16 @@ async def run_portal_document_solver(
     output_filename: str = None
 ) -> str:
     """
-    Ultra-Lightweight Production Portal Document Engine (<150MB RAM):
-    - Ultra-low memory Chrome flags (--single-process, --no-zygote, --js-flags=--max-old-space-size=128).
-    - Prevents Render 512MB RAM OOM container kills.
+    Production-Grade Autonomous Portal Document Engine:
+    - Stable Linux Chromium flags.
     - Pre-clears session lock.
-    - Intercepts target webview & exports 1-page PDF.
-    - Executes auto-logout cleanup.
+    - Authenticates & asserts session handshake on main.php.
+    - Navigates to requested document type.
+    - Intercepts target webview (e.g. course_registration_printout.php / exam_card_printout.php).
+    - Asserts that target URL is NOT index.php.
+    - Measures scrollHeight & applies fit-to-page scale.
+    - Exports pristine 1-page PDF.
+    - Auto-logs out cleanly to prevent device lockout.
     """
     out_dir = settings.STORAGE_DIR
     os.makedirs(out_dir, exist_ok=True)
@@ -34,20 +38,15 @@ async def run_portal_document_solver(
     logger.info(f"User ID: {username} | Doc Type: {document_type} | Paper: {paper_format} | Output: {pdf_full_path}")
 
     async with async_playwright() as p:
-        # Ultra-low memory flags for 512MB RAM cloud containers
+        # Stable Linux flags (omitting deprecated --single-process)
         launch_args = [
             "--no-sandbox",
             "--disable-setuid-sandbox",
             "--disable-dev-shm-usage",
             "--disable-gpu",
             "--disable-software-rasterizer",
-            "--disable-http2",
-            "--ignore-certificate-errors",
-            "--single-process",                   # Run in single process (reduces RAM from 450MB -> 120MB)
-            "--no-zygote",                         # Eliminate duplicate helper processes
-            "--disable-extensions",
-            "--disable-background-networking",
-            "--js-flags=--max-old-space-size=128" # Hard-cap V8 JS engine memory at 128MB
+            "--disable-http2",  # Prevent SNI 421 Misdirected Request errors
+            "--ignore-certificate-errors"
         ]
 
         browser = await p.chromium.launch(
