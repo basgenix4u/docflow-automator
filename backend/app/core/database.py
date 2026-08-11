@@ -2,13 +2,28 @@ from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sess
 from sqlalchemy.orm import declarative_base
 from app.core.config import settings
 
-db_url = settings.DATABASE_URL
-# Convert postgresql:// to postgresql+asyncpg:// if needed for Neon.tech
-if db_url.startswith("postgresql://"):
+db_url = settings.DATABASE_URL.strip()
+
+# Convert postgres:// or postgresql:// to postgresql+asyncpg:// for Neon / Supabase / Render
+if db_url.startswith("postgres://"):
+    db_url = db_url.replace("postgres://", "postgresql+asyncpg://", 1)
+elif db_url.startswith("postgresql://"):
     db_url = db_url.replace("postgresql://", "postgresql+asyncpg://", 1)
 
 connect_args = {}
-if "sqlite" in db_url:
+
+# Fix asyncpg keyword argument compatibility for Neon/Supabase (sslmode -> ssl)
+if "asyncpg" in db_url:
+    if "sslmode=" in db_url:
+        db_url = db_url.replace("sslmode=require", "ssl=require") \
+                       .replace("sslmode=prefer", "ssl=require") \
+                       .replace("sslmode=verify-ca", "ssl=require") \
+                       .replace("sslmode=verify-full", "ssl=require")
+    # If no ssl parameter in URL for remote PostgreSQL, default to ssl=True
+    if "ssl=" not in db_url and "localhost" not in db_url and "127.0.0.1" not in db_url:
+        connect_args["ssl"] = True
+
+elif "sqlite" in db_url:
     connect_args["check_same_thread"] = False
 
 engine = create_async_engine(
