@@ -10,14 +10,14 @@ POSSIBLE_CHROME_BINS = [
     "/usr/bin/chromium",
     "/usr/bin/chromium-browser",
     "/usr/bin/google-chrome",
-    "/home/user/.cache/ms-playwright/chromium-1155/chrome-linux/chrome",
     "/root/.cache/ms-playwright/chromium-1155/chrome-linux/chrome",
-    "/home/user/.cache/ms-playwright/chromium-1234/chrome-linux64/chrome",
+    "/root/.cache/ms-playwright/chromium-1234/chrome-linux64/chrome",
+    "/home/user/.cache/ms-playwright/chromium-1155/chrome-linux/chrome",
 ]
 
 def get_chrome_executable():
     for path in POSSIBLE_CHROME_BINS:
-        if os.path.exists(path):
+        if os.path.isfile(path) and os.access(path, os.X_OK):
             return path
     return None
 
@@ -53,6 +53,8 @@ async def run_portal_document_solver(
     logger.info(f"User ID: {username} | Doc Type: {document_type} | Paper: {paper_format} | Output: {pdf_full_path}")
     if chrome_bin:
         logger.info(f"Using Chromium binary: {chrome_bin}")
+    else:
+        logger.info("No explicit Chromium binary path matched; relying on Playwright default launcher.")
 
     async with async_playwright() as p:
         launch_kwargs = {
