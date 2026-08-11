@@ -9,10 +9,15 @@ class Settings(BaseSettings):
     JWT_ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 1440
 
-    # Switchable database (Neon PostgreSQL or local SQLite)
+    # Database: Neon PostgreSQL or local SQLite
     DATABASE_URL: str = "sqlite+aiosqlite:////home/user/docflow-automator/backend/docflow.db"
 
     FUW_PORTAL_URL: str = "https://ug.fuwportal.edu.ng/index.php"
+
+    # Free Cloud Storage (Cloudinary)
+    CLOUDINARY_CLOUD_NAME: str = ""
+    CLOUDINARY_API_KEY: str = ""
+    CLOUDINARY_API_SECRET: str = ""
 
     STORAGE_DIR: str = "/home/user/docflow-automator/storage/pdfs"
 
