@@ -6,10 +6,12 @@ from playwright.async_api import async_playwright
 logger = logging.getLogger("portal_document_solver")
 
 POSSIBLE_CHROME_BINS = [
+    "/usr/bin/chromium",
+    "/usr/bin/chromium-browser",
+    "/usr/bin/google-chrome",
     "/home/user/.cache/ms-playwright/chromium-1155/chrome-linux/chrome",
     "/root/.cache/ms-playwright/chromium-1155/chrome-linux/chrome",
-    "/usr/bin/chromium",
-    "/usr/bin/google-chrome"
+    "/home/user/.cache/ms-playwright/chromium-1234/chrome-linux64/chrome",
 ]
 
 def get_chrome_executable():
@@ -49,7 +51,7 @@ async def run_portal_document_solver(
     logger.info(f"=== PRODUCTION PORTAL SOLVER INITIALIZED ===")
     logger.info(f"User ID: {username} | Doc Type: {document_type} | Paper: {paper_format} | Output: {pdf_full_path}")
     if chrome_bin:
-        logger.info(f"Using explicit Chromium binary: {chrome_bin}")
+        logger.info(f"Using Chromium binary: {chrome_bin}")
 
     async with async_playwright() as p:
         launch_kwargs = {
