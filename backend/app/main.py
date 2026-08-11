@@ -85,6 +85,23 @@ app.include_router(runs.router)
 app.include_router(documents.router)
 app.include_router(security.router)
 
+@app.get("/")
+async def root():
+    return {
+        "status": "online",
+        "message": "DocFlow Automator Backend Engine Live",
+        "docs": "/docs",
+        "health": "/api/v1/health"
+    }
+
+@app.get("/api/v1")
+async def api_v1_root():
+    return {
+        "status": "online",
+        "version": "v1",
+        "health": "/api/v1/health"
+    }
+
 @app.get("/api/v1/health")
 async def health_check():
     return {
