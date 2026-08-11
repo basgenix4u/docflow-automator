@@ -47,7 +47,7 @@ async def run_portal_document_solver(
             "--ignore-certificate-errors"
         ]
 
-        # Use Playwright's native bundled Chromium for 100% Docker/Render/Linux compatibility
+        # Use Playwright default bundled chromium
         browser = await p.chromium.launch(
             headless=True,
             args=launch_args
@@ -159,18 +159,24 @@ async def run_portal_document_solver(
             if "index.php" in captured_url:
                 raise Exception("Target URL redirected to index.php (login screen). Capture rejected.")
 
-            # Step 7: Measure DOM Height & Calculate Fit-to-Page Scale
-            dims = await target_page.evaluate("""() => {
-                const body = document.body;
-                const html = document.documentElement;
-                const height = Math.max(body.scrollHeight, body.offsetHeight, html.clientHeight, html.scrollHeight, html.offsetHeight);
-                const width = Math.max(body.scrollWidth, body.offsetWidth, html.clientWidth, html.scrollWidth, html.offsetWidth);
-                return { width, height };
-            }""")
-            doc_height = dims["height"]
+            # Step 7: Measure DOM Height & Calculate Fit-to-Page Scale (with zero division guard)
+            try:
+                dims = await target_page.evaluate("""() => {
+                    const body = document.body || {};
+                    const html = document.documentElement || {};
+                    const height = Math.max(body.scrollHeight || 0, body.offsetHeight || 0, html.clientHeight || 0, html.scrollHeight || 0, html.offsetHeight || 0);
+                    const width = Math.max(body.scrollWidth || 0, body.offsetWidth || 0, html.clientWidth || 0, html.scrollWidth || 0, html.offsetWidth || 0);
+                    return { width, height };
+                }""")
+            except Exception:
+                dims = {"width": 1280, "height": 1000}
+
+            doc_height = dims.get("height", 1000) or 1000
+            if doc_height <= 0:
+                doc_height = 1000
 
             target_printable_height = 1075.0 if paper_format.upper() == "A4" else 755.0
-            fit_scale = target_printable_height / doc_height
+            fit_scale = target_printable_height / float(doc_height)
             fit_scale = max(0.40, min(1.0, fit_scale))
 
             logger.info(f"--> DOM Height = {doc_height}px | Printable {paper_format} Height = {target_printable_height}px | Fit Scale = {fit_scale:.4f}")
@@ -237,7 +243,7 @@ async def run_portal_document_solver(
             logger.info("8. Executing immediate session logout clearance...")
             try:
                 await page.evaluate("if (typeof $ === 'function') $.post('scriptfile_a.php', { contentvar: 'logout' });")
-                await page.wait_for_timeout(1000)
+                await page.wait_for_timeout(500)
             except Exception:
                 pass
             await browser.close()
