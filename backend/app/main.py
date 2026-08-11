@@ -86,7 +86,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Register Routers under both /api/v1 and root for 100% Vercel rewrite compatibility
+# Mount Routers under /api/v1 (primary)
 app.include_router(auth.router)
 app.include_router(portals.router)
 app.include_router(workflows.router)
@@ -94,7 +94,17 @@ app.include_router(runs.router)
 app.include_router(documents.router)
 app.include_router(security.router)
 
-# Also mount under /health, /documents, /portals, /workflows, /runs for direct rewrites
+# Mount Routers ALSO without /api/v1 prefix for 100% fallback compatibility
+app.include_router(auth.router, prefix="/api")
+app.include_router(portals.router, prefix="/api")
+app.include_router(workflows.router, prefix="/api")
+app.include_router(runs.router, prefix="/api")
+app.include_router(documents.router, prefix="/api")
+app.include_router(security.router, prefix="/api")
+
+# Also mount document and health endpoints at root level
+app.include_router(documents.router, prefix="")
+
 @app.get("/")
 async def root():
     return {
