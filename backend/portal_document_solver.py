@@ -2,6 +2,7 @@ import os
 import asyncio
 import logging
 from playwright.async_api import async_playwright
+from app.core.config import settings
 
 logger = logging.getLogger("portal_document_solver")
 
@@ -38,7 +39,7 @@ async def run_portal_document_solver(
     - Exports pristine 1-page PDF.
     - Auto-logs out cleanly to prevent device lockout.
     """
-    out_dir = "/home/user/docflow-automator/storage/pdfs"
+    out_dir = settings.STORAGE_DIR
     os.makedirs(out_dir, exist_ok=True)
 
     safe_name = username.replace('/', '_')

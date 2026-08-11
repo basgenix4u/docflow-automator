@@ -9,6 +9,22 @@ on:
 jobs:
   backend-test:
     runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: test_user
+          POSTGRES_PASSWORD: test_password
+          POSTGRES_DB: test_docflow
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
     steps:
       - uses: actions/checkout@v4
 
@@ -17,14 +33,38 @@ jobs:
         with:
           python-version: '3.13'
 
-      - name: Install dependencies
+      - name: Install System Dependencies for Playwright & PostgreSQL
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            libnss3 \
+            libnspr4 \
+            libatk1.0-0 \
+            libatk-bridge2.0-0 \
+            libcups2 \
+            libdrm2 \
+            libgbm1 \
+            libasound2t64 \
+            libxcomposite1 \
+            libxdamage1 \
+            libxfixes3 \
+            libxrandr2 \
+            libxkbcommon0 \
+            libpango-1.0-0 \
+            libcairo2 \
+            libatspi2.0-0
+
+      - name: Install Python Dependencies & Playwright Browsers
         run: |
           cd backend
           python -m pip install --upgrade pip
           pip install -r requirements.txt
           playwright install chromium
+          sudo playwright install-deps chromium || true
 
-      - name: Run Backend Tests
+      - name: Run Backend Integration & Database Tests
+        env:
+          DATABASE_URL: "postgresql+asyncpg://test_user:test_password@localhost:5432/test_docflow"
         run: |
           cd backend
           PYTHONPATH=. pytest tests
@@ -39,7 +79,7 @@ jobs:
         with:
           node-version: '20'
 
-      - name: Install dependencies & Build
+      - name: Install dependencies & Build Next.js App
         run: |
           cd frontend
           npm install --legacy-peer-deps

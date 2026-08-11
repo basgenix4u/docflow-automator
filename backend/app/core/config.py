@@ -10,7 +10,7 @@ class Settings(BaseSettings):
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 1440
 
     # Database: Neon PostgreSQL or local SQLite
-    DATABASE_URL: str = "sqlite+aiosqlite:////home/user/docflow-automator/backend/docflow.db"
+    DATABASE_URL: str = "sqlite+aiosqlite:///./docflow.db"
 
     FUW_PORTAL_URL: str = "https://ug.fuwportal.edu.ng/index.php"
 
@@ -19,7 +19,7 @@ class Settings(BaseSettings):
     CLOUDINARY_API_KEY: str = ""
     CLOUDINARY_API_SECRET: str = ""
 
-    STORAGE_DIR: str = "/home/user/docflow-automator/storage/pdfs"
+    STORAGE_DIR: str = "./storage/pdfs"
 
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8", extra="ignore")
 
