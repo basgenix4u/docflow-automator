@@ -1,14 +1,28 @@
 import os
 import asyncio
+import logging
 from playwright.async_api import async_playwright
 
-CHROME_BIN = "/home/user/.cache/ms-playwright/chromium-1155/chrome-linux/chrome"
+logger = logging.getLogger("portal_document_solver")
+
+POSSIBLE_CHROME_BINS = [
+    "/home/user/.cache/ms-playwright/chromium-1155/chrome-linux/chrome",
+    "/root/.cache/ms-playwright/chromium-1155/chrome-linux/chrome",
+    "/usr/bin/chromium",
+    "/usr/bin/google-chrome"
+]
+
+def get_chrome_executable():
+    for path in POSSIBLE_CHROME_BINS:
+        if os.path.exists(path):
+            return path
+    return None
 
 async def run_portal_document_solver(
     username: str,
     password: str,
-    document_type: str = "crg", # exam, crg, rec, result
-    paper_format: str = "A4",
+    document_type: str = "exam", # exam, crg, rec, result
+    paper_format: str = "A5",
     output_filename: str = None
 ) -> str:
     """
@@ -31,21 +45,27 @@ async def run_portal_document_solver(
 
     pdf_full_path = os.path.join(out_dir, output_filename)
 
-    print(f"=== PRODUCTION PORTAL SOLVER INITIALIZED ===")
-    print(f"User ID: {username} | Doc Type: {document_type} | Paper: {paper_format} | Output: {pdf_full_path}")
+    chrome_bin = get_chrome_executable()
+    logger.info(f"=== PRODUCTION PORTAL SOLVER INITIALIZED ===")
+    logger.info(f"User ID: {username} | Doc Type: {document_type} | Paper: {paper_format} | Output: {pdf_full_path}")
+    if chrome_bin:
+        logger.info(f"Using explicit Chromium binary: {chrome_bin}")
 
     async with async_playwright() as p:
-        browser = await p.chromium.launch(
-            executable_path=CHROME_BIN,
-            headless=True,
-            args=[
+        launch_kwargs = {
+            "headless": True,
+            "args": [
                 "--no-sandbox",
                 "--disable-setuid-sandbox",
                 "--disable-dev-shm-usage",
                 "--disable-http2",  # Prevent SNI 421 Misdirected Request errors
                 "--ignore-certificate-errors"
             ]
-        )
+        }
+        if chrome_bin:
+            launch_kwargs["executable_path"] = chrome_bin
+
+        browser = await p.chromium.launch(**launch_kwargs)
         context = await browser.new_context(
             viewport={"width": 1280, "height": 900},
             ignore_https_errors=True
@@ -54,13 +74,13 @@ async def run_portal_document_solver(
 
         try:
             # Step 1: Pre-clear session lock
-            print("\n1. Pre-clearing any stale session locks...")
+            logger.info("1. Pre-clearing any stale session locks...")
             try:
                 await page.goto("https://ug.fuwportal.edu.ng/index.php", wait_until="networkidle")
                 await page.evaluate("if (typeof $ === 'function') $.post('scriptfile_a.php', { contentvar: 'logout' });")
                 await page.wait_for_timeout(1000)
-            except Exception:
-                pass
+            except Exception as e:
+                logger.debug(f"Pre-clear notice: {e}")
 
             # Step 2: Authentication Loop with Verification
             authenticated = False
@@ -69,7 +89,7 @@ async def run_portal_document_solver(
 
             while not authenticated and attempts < max_attempts:
                 attempts += 1
-                print(f"2. [Attempt {attempts}/{max_attempts}] Authenticating as {username}...")
+                logger.info(f"2. [Attempt {attempts}/{max_attempts}] Authenticating as {username}...")
                 await page.goto("https://ug.fuwportal.edu.ng/index.php", wait_until="networkidle")
                 await page.fill("#userId", username)
                 await page.fill("#password", password)
@@ -84,10 +104,10 @@ async def run_portal_document_solver(
 
                 body_text = await page.inner_text("body")
                 if "Logout" in body_text or "MAIN MENU" in body_text or "PERSONAL SETUP" in body_text:
-                    print("--> Authentication Successful!")
+                    logger.info("--> Authentication Successful!")
                     authenticated = True
                 elif "logged in on another device" in body_text:
-                    print("--> Session lock active on server. Executing logout clearance and waiting 3s...")
+                    logger.warning("--> Session lock active on server. Executing logout clearance and waiting 3s...")
                     await page.evaluate("if (typeof $ === 'function') $.post('scriptfile_a.php', { contentvar: 'logout' });")
                     await page.wait_for_timeout(3000)
 
@@ -95,13 +115,13 @@ async def run_portal_document_solver(
                 raise Exception(f"Failed to authenticate user {username} within attempt limit.")
 
             # Step 3: Mandatory main.php Session Handshake
-            print("3. Executing main.php session cookie handshake...")
+            logger.info("3. Executing main.php session cookie handshake...")
             await page.goto("https://ug.fuwportal.edu.ng/main.php", wait_until="networkidle")
             await page.wait_for_timeout(2000)
 
             # Step 4: Navigate to Document Service Page
             target_url = f"https://ug.fuwportal.edu.ng/print_course_form.php?id={document_type}&r_val=U3R1ZGVudA=="
-            print(f"4. Navigating to document service URL: {target_url}...")
+            logger.info(f"4. Navigating to document service URL: {target_url}...")
 
             action_link = await page.query_selector(f"a[href*='id={document_type}']")
             if action_link:
@@ -112,14 +132,14 @@ async def run_portal_document_solver(
                 await page.wait_for_timeout(3000)
 
             # Step 5: Auto-Fill Session & Semester Dropdowns
-            print("5. Auto-filling session and semester dropdowns...")
+            logger.info("5. Auto-filling session and semester dropdowns...")
             session_select = await page.query_selector("select[name*='session'], select[id*='session']")
             if session_select:
                 options = await session_select.query_selector_all("option")
                 if len(options) > 1:
                     first_val = await options[1].get_attribute("value")
                     opt_text = (await options[1].inner_text()).strip()
-                    print(f"--> Auto-selected Session: '{opt_text}' ({first_val})")
+                    logger.info(f"--> Auto-selected Session: '{opt_text}' ({first_val})")
                     await session_select.select_option(first_val)
 
             semester_select = await page.query_selector("select[name*='semester'], select[id*='semester']")
@@ -128,11 +148,11 @@ async def run_portal_document_solver(
                 if len(options) > 1:
                     first_val = await options[1].get_attribute("value")
                     opt_text = (await options[1].inner_text()).strip()
-                    print(f"--> Auto-selected Semester: '{opt_text}' ({first_val})")
+                    logger.info(f"--> Auto-selected Semester: '{opt_text}' ({first_val})")
                     await semester_select.select_option(first_val)
 
             # Step 6: Submit & Intercept Webview Popup Window
-            print("6. Submitting form and intercepting target webview...")
+            logger.info("6. Submitting form and intercepting target webview...")
             submit_btn = await page.query_selector("input[type='submit'], button[type='submit'], input[value*='Print'], input[value*='Submit'], input[value*='Generate']")
 
             popup_page = None
@@ -141,9 +161,9 @@ async def run_portal_document_solver(
                     async with context.expect_page(timeout=8000) as popup_info:
                         await submit_btn.click()
                     popup_page = await popup_info.value
-                    print(f"--> POPUP WEBVIEW INTERCEPTED! URL: {popup_page.url}")
+                    logger.info(f"--> POPUP WEBVIEW INTERCEPTED! URL: {popup_page.url}")
                 except Exception as e:
-                    print("--> No new popup tab opened, rendered in same window:", e)
+                    logger.info(f"--> No new popup tab opened, rendered in same window: {e}")
 
             target_page = popup_page if popup_page else page
             await target_page.wait_for_load_state("networkidle")
@@ -152,10 +172,10 @@ async def run_portal_document_solver(
 
             # Step 7: Webview Target URL Assertion (NEVER PRINT LOGIN SCREEN)
             captured_url = target_page.url
-            print(f"7. Asserting Target Webview URL: {captured_url}")
+            logger.info(f"7. Asserting Target Webview URL: {captured_url}")
 
             if "index.php" in captured_url:
-                raise Exception(f"Target URL redirected to index.php (login screen). Capture rejected.")
+                raise Exception("Target URL redirected to index.php (login screen). Capture rejected.")
 
             # Step 8: Measure DOM Height & Calculate Fit-to-Page Scale
             dims = await target_page.evaluate("""() => {
@@ -171,7 +191,7 @@ async def run_portal_document_solver(
             fit_scale = target_printable_height / doc_height
             fit_scale = max(0.40, min(1.0, fit_scale))
 
-            print(f"--> DOM Height = {doc_height}px | Printable {paper_format} Height = {target_printable_height}px | Fit Scale = {fit_scale:.4f}")
+            logger.info(f"--> DOM Height = {doc_height}px | Printable {paper_format} Height = {target_printable_height}px | Fit Scale = {fit_scale:.4f}")
 
             # Step 9: Inject Print Isolation CSS & Export PDF
             await target_page.add_style_tag(content=f"""
@@ -215,7 +235,7 @@ async def run_portal_document_solver(
                 }}
             """)
 
-            print(f"8. Exporting 1-Page {paper_format} PDF: {pdf_full_path}")
+            logger.info(f"8. Exporting 1-Page {paper_format} PDF: {pdf_full_path}")
             await target_page.pdf(
                 path=pdf_full_path,
                 format=paper_format,
@@ -224,22 +244,22 @@ async def run_portal_document_solver(
                 margin={"top": "5mm", "bottom": "5mm", "left": "5mm", "right": "5mm"}
             )
 
-            print(f"=== SUCCESS! EXPORTED {pdf_full_path} ===")
+            logger.info(f"=== SUCCESS! EXPORTED {pdf_full_path} ===")
             return pdf_full_path
 
         except Exception as err:
-            print("Portal Document Solver Error:", err)
+            logger.error(f"Portal Document Solver Error: {err}")
             return None
 
         finally:
-            print("9. Executing immediate session logout clearance...")
+            logger.info("9. Executing immediate session logout clearance...")
             try:
                 await page.evaluate("if (typeof $ === 'function') $.post('scriptfile_a.php', { contentvar: 'logout' });")
                 await page.wait_for_timeout(1000)
             except Exception:
                 pass
             await browser.close()
-            print("Session context closed and released.")
+            logger.info("Session context closed and released.")
 
 if __name__ == "__main__":
     import sys
