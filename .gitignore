@@ -8,6 +8,8 @@ ENV/
 .pytest_cache/
 .coverage
 htmlcov/
+*.png
+*.html
 
 # Node
 node_modules/
