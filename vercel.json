@@ -6,7 +6,7 @@
     },
     {
       "source": "/api/:path*",
-      "destination": "https://docflow-automator-backend.onrender.com/api/:path*"
+      "destination": "https://docflow-automator-backend.onrender.com/api/v1/:path*"
     }
   ]
 }

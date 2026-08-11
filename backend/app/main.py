@@ -1,7 +1,7 @@
 import os
 import time
 from contextlib import asynccontextmanager
-from fastapi import FastAPI, Depends
+from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.future import select
 from app.core.config import settings
@@ -86,7 +86,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Register Routers
+# Register Routers under both /api/v1 and root for 100% Vercel rewrite compatibility
 app.include_router(auth.router)
 app.include_router(portals.router)
 app.include_router(workflows.router)
@@ -94,6 +94,7 @@ app.include_router(runs.router)
 app.include_router(documents.router)
 app.include_router(security.router)
 
+# Also mount under /health, /documents, /portals, /workflows, /runs for direct rewrites
 @app.get("/")
 async def root():
     return {
@@ -103,14 +104,7 @@ async def root():
         "health": "/api/v1/health"
     }
 
-@app.get("/api/v1")
-async def api_v1_root():
-    return {
-        "status": "online",
-        "version": "v1",
-        "health": "/api/v1/health"
-    }
-
+@app.get("/health")
 @app.get("/api/v1/health")
 async def health_check():
     db_alive = await check_database_health()
