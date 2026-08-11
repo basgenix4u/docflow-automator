@@ -55,13 +55,16 @@ async def auto_generate_document(req: AutoGenerateRequest):
     safe_name = req.username.replace('/', '_')
     out_filename = f"FUW_{req.document_type.upper()}_{safe_name}_{req.paper_format.upper()}.pdf"
 
-    pdf_path = await run_portal_document_solver(
-        username=req.username,
-        password=req.password,
-        document_type=req.document_type,
-        paper_format=req.paper_format,
-        output_filename=out_filename
-    )
+    try:
+        pdf_path = await run_portal_document_solver(
+            username=req.username,
+            password=req.password,
+            document_type=req.document_type,
+            paper_format=req.paper_format,
+            output_filename=out_filename
+        )
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=f"Solver Execution Exception: {str(exc)}")
 
     if not pdf_path or not os.path.exists(pdf_path):
         raise HTTPException(
