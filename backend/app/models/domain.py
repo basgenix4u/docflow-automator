@@ -1,11 +1,14 @@
 import uuid
 from datetime import datetime, timezone
 from sqlalchemy import Column, String, Integer, Text, DateTime, ForeignKey, Boolean
-from sqlalchemy.orm import relationship
 from app.core.database import Base
 
 def generate_uuid():
     return str(uuid.uuid4())
+
+def utc_now():
+    # Offset-naive UTC datetime for 100% PostgreSQL & SQLite cross-driver compatibility
+    return datetime.now(timezone.utc).replace(tzinfo=None)
 
 class User(Base):
     __tablename__ = "users"
@@ -16,7 +19,7 @@ class User(Base):
     hashed_password = Column(String, nullable=False)
     role = Column(String, default="ENGINEER")  # ADMIN, ENGINEER, VIEWER
     is_active = Column(Boolean, default=True)
-    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+    created_at = Column(DateTime, default=utc_now)
 
 class Portal(Base):
     __tablename__ = "portals"
@@ -30,7 +33,7 @@ class Portal(Base):
     demo_username = Column(String, nullable=True)
     demo_password = Column(String, nullable=True)
     status = Column(String, default="ACTIVE")
-    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+    created_at = Column(DateTime, default=utc_now)
 
 class Workflow(Base):
     __tablename__ = "workflows"
@@ -40,8 +43,8 @@ class Workflow(Base):
     name = Column(String, nullable=False)
     description = Column(Text, nullable=True)
     steps_json = Column(Text, nullable=False)  # JSON array of workflow steps
-    target_format = Column(String, default="A4")  # A4, A5
-    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+    target_format = Column(String, default="A5")  # A4, A5
+    created_at = Column(DateTime, default=utc_now)
 
 class WorkflowRun(Base):
     __tablename__ = "workflow_runs"
@@ -54,7 +57,7 @@ class WorkflowRun(Base):
     extracted_data_json = Column(Text, default="{}")  # Extracted structured portal data
     duration_ms = Column(Integer, default=0)
     error_message = Column(Text, nullable=True)
-    started_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+    started_at = Column(DateTime, default=utc_now)
     completed_at = Column(DateTime, nullable=True)
 
 class Document(Base):
@@ -63,11 +66,11 @@ class Document(Base):
     id = Column(String, primary_key=True, default=generate_uuid)
     workflow_run_id = Column(String, ForeignKey("workflow_runs.id"), nullable=True)
     title = Column(String, nullable=False)
-    page_format = Column(String, default="A4")  # A4, A5
+    page_format = Column(String, default="A5")  # A4, A5
     page_count = Column(Integer, default=1)
     file_size_bytes = Column(Integer, default=0)
     file_path = Column(String, nullable=False)
-    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+    created_at = Column(DateTime, default=utc_now)
 
 class SecurityScan(Base):
     __tablename__ = "security_scans"
@@ -79,4 +82,4 @@ class SecurityScan(Base):
     vulnerabilities_found = Column(Integer, default=0)
     tests_executed_json = Column(Text, default="[]")
     report_json = Column(Text, default="{}")
-    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+    created_at = Column(DateTime, default=utc_now)
