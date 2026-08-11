@@ -7,18 +7,15 @@ import {
   SecurityScan
 } from "@/types";
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || "/api/v1";
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || "https://docflow-automator-backend.onrender.com/api/v1";
 
 async function fetchJson<T>(url: string, options?: RequestInit): Promise<T> {
   const fullUrl = url.startsWith("http") ? url : `${API_BASE}${url}`;
-  const isPost = options?.method === "POST";
-
-  // For POST document generation, use 90s single request timeout (no concurrent duplicate retries)
-  const controller = new AbortController();
-  const timeoutMs = isPost ? 90000 : 30000;
-  const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
 
   try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 90000); // 90s timeout for direct browser-to-backend automation
+
     const res = await fetch(fullUrl, {
       ...options,
       signal: controller.signal,
@@ -35,7 +32,6 @@ async function fetchJson<T>(url: string, options?: RequestInit): Promise<T> {
     }
     return res.json();
   } catch (err: any) {
-    clearTimeout(timeoutId);
     if (err.name === "AbortError") {
       throw new Error("Portal automation execution timed out. Please retry.");
     }
