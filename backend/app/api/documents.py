@@ -66,7 +66,10 @@ async def auto_generate_document(req: AutoGenerateRequest):
         )
 
         if not pdf_path or not os.path.exists(pdf_path):
-            raise HTTPException(status_code=500, detail="Failed to generate portal document. Please verify user ID and password.")
+            raise HTTPException(
+                status_code=400,
+                detail="Portal automation could not complete. Please verify student User ID, password, or try again in 1 minute."
+            )
 
         file_size = os.path.getsize(pdf_path)
         cloudinary_url = ""
@@ -123,7 +126,7 @@ async def auto_generate_document(req: AutoGenerateRequest):
         raise
     except Exception as top_err:
         print("Top-level auto_generate_document error:", top_err)
-        raise HTTPException(status_code=500, detail=str(top_err))
+        raise HTTPException(status_code=400, detail=f"Automation error: {str(top_err)}")
 
 @router.get("/documents/{document_id}/view")
 @router.get("/api/documents/{document_id}/view")
