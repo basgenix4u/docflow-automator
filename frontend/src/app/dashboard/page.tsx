@@ -60,6 +60,14 @@ export default function DashboardPage() {
       return;
     }
 
+    // Synchronously open blank tab to bypass browser popup blockers
+    let pdfTab: Window | null = null;
+    try {
+      pdfTab = window.open("about:blank", "_blank");
+    } catch (ex) {
+      console.warn("Popup block notice:", ex);
+    }
+
     setGenerating(true);
     setGeneratedDoc(null);
     setStatusMsg(`Navigating to FUW portal for ${username}, selecting ${docType.toUpperCase()} and intercepting webview...`);
@@ -75,12 +83,17 @@ export default function DashboardPage() {
       setGeneratedDoc(res);
       setStatusMsg("Document successfully captured and converted to 1-page PDF!");
 
-      // AUTO-OPEN PDF IN BROWSER TAB INSTANTLY!
+      // Redirect pre-opened tab to the generated PDF URL
       const viewUrl = res.view_url || api.getViewUrl(res.id);
-      window.open(viewUrl, "_blank");
+      if (pdfTab && !pdfTab.closed) {
+        pdfTab.location.href = viewUrl;
+      }
 
       await loadDashboardData();
     } catch (err: any) {
+      if (pdfTab && !pdfTab.closed) {
+        pdfTab.close();
+      }
       console.error("Auto generate error:", err);
       setStatusMsg(`Generation error: ${err.message || "Failed to generate document. Please check portal credentials."}`);
     } finally {
