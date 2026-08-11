@@ -96,8 +96,8 @@ async def auto_generate_document(req: AutoGenerateRequest, db: AsyncSession = De
         "page_count": doc.page_count,
         "file_size_bytes": doc.file_size_bytes,
         "created_at": doc.created_at,
-        "view_url": f"http://127.0.0.1:8000/api/v1/documents/{doc.id}/view",
-        "download_url": f"http://127.0.0.1:8000/api/v1/documents/{doc.id}/download",
+        "view_url": f"/api/v1/documents/{doc.id}/view",
+        "download_url": f"/api/v1/documents/{doc.id}/download",
         "cloudinary_url": cloudinary_url
     }
 

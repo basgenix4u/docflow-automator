@@ -7,10 +7,11 @@ import {
   SecurityScan
 } from "@/types";
 
-const API_BASE = "http://127.0.0.1:8000/api/v1";
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || "/api/v1";
 
 async function fetchJson<T>(url: string, options?: RequestInit): Promise<T> {
-  const res = await fetch(`${API_BASE}${url}`, {
+  const fullUrl = url.startsWith("http") ? url : `${API_BASE}${url}`;
+  const res = await fetch(fullUrl, {
     ...options,
     headers: {
       "Content-Type": "application/json",
