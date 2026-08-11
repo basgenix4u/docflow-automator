@@ -1,30 +1,43 @@
+from urllib.parse import urlparse, parse_qs, urlencode, urlunparse
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sessionmaker
 from sqlalchemy.orm import declarative_base
 from app.core.config import settings
 
-db_url = settings.DATABASE_URL.strip()
+def prepare_async_db_url(url_str: str) -> tuple[str, dict]:
+    url_str = url_str.strip()
+    connect_args = {}
 
-# Convert postgres:// or postgresql:// to postgresql+asyncpg:// for Neon / Supabase / Render
-if db_url.startswith("postgres://"):
-    db_url = db_url.replace("postgres://", "postgresql+asyncpg://", 1)
-elif db_url.startswith("postgresql://"):
-    db_url = db_url.replace("postgresql://", "postgresql+asyncpg://", 1)
+    if not url_str or "sqlite" in url_str:
+        return url_str, {"check_same_thread": False}
 
-connect_args = {}
+    try:
+        parsed = urlparse(url_str)
+        scheme = parsed.scheme
 
-# Fix asyncpg keyword argument compatibility for Neon/Supabase (sslmode -> ssl)
-if "asyncpg" in db_url:
-    if "sslmode=" in db_url:
-        db_url = db_url.replace("sslmode=require", "ssl=require") \
-                       .replace("sslmode=prefer", "ssl=require") \
-                       .replace("sslmode=verify-ca", "ssl=require") \
-                       .replace("sslmode=verify-full", "ssl=require")
-    # If no ssl parameter in URL for remote PostgreSQL, default to ssl=True
-    if "ssl=" not in db_url and "localhost" not in db_url and "127.0.0.1" not in db_url:
-        connect_args["ssl"] = True
+        # Convert postgres:// or postgresql:// to postgresql+asyncpg://
+        if scheme in ("postgres", "postgresql"):
+            scheme = "postgresql+asyncpg"
 
-elif "sqlite" in db_url:
-    connect_args["check_same_thread"] = False
+        # Filter out unsupported asyncpg query params (e.g. channel_binding, sslmode, etc.)
+        qs = parse_qs(parsed.query)
+        allowed_qs = {}
+        for k, v in qs.items():
+            if k.lower() in ("ssl", "timeout", "command_timeout"):
+                allowed_qs[k] = v
+
+        new_query = urlencode(allowed_qs, doseq=True)
+        cleaned_url = urlunparse((scheme, parsed.netloc, parsed.path, parsed.params, new_query, parsed.fragment))
+
+        # Default remote PostgreSQL (Neon/Supabase/Render) to SSL
+        if "localhost" not in parsed.netloc and "127.0.0.1" not in parsed.netloc:
+            connect_args["ssl"] = True
+
+        return cleaned_url, connect_args
+    except Exception as e:
+        print("Database URL parse warning:", e)
+        return url_str, connect_args
+
+db_url, connect_args = prepare_async_db_url(settings.DATABASE_URL)
 
 engine = create_async_engine(
     db_url,
