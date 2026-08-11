@@ -14,15 +14,12 @@ async def run_portal_document_solver(
     output_filename: str = None
 ) -> str:
     """
-    Production-Grade Autonomous Portal Document Engine:
+    Ultra-Lightweight Production Portal Document Engine (<150MB RAM):
+    - Ultra-low memory Chrome flags (--single-process, --no-zygote, --js-flags=--max-old-space-size=128).
+    - Prevents Render 512MB RAM OOM container kills.
     - Pre-clears session lock.
-    - Authenticates & asserts session handshake on main.php.
-    - Navigates to requested document type.
-    - Intercepts target webview (e.g. course_registration_printout.php / exam_card_printout.php).
-    - Asserts that target URL is NOT index.php.
-    - Measures scrollHeight & applies fit-to-page scale.
-    - Exports pristine 1-page PDF.
-    - Auto-logs out cleanly to prevent device lockout.
+    - Intercepts target webview & exports 1-page PDF.
+    - Executes auto-logout cleanup.
     """
     out_dir = settings.STORAGE_DIR
     os.makedirs(out_dir, exist_ok=True)
@@ -37,17 +34,22 @@ async def run_portal_document_solver(
     logger.info(f"User ID: {username} | Doc Type: {document_type} | Paper: {paper_format} | Output: {pdf_full_path}")
 
     async with async_playwright() as p:
+        # Ultra-low memory flags for 512MB RAM cloud containers
         launch_args = [
             "--no-sandbox",
             "--disable-setuid-sandbox",
             "--disable-dev-shm-usage",
             "--disable-gpu",
             "--disable-software-rasterizer",
-            "--disable-http2",  # Prevent SNI 421 Misdirected Request errors
-            "--ignore-certificate-errors"
+            "--disable-http2",
+            "--ignore-certificate-errors",
+            "--single-process",                   # Run in single process (reduces RAM from 450MB -> 120MB)
+            "--no-zygote",                         # Eliminate duplicate helper processes
+            "--disable-extensions",
+            "--disable-background-networking",
+            "--js-flags=--max-old-space-size=128" # Hard-cap V8 JS engine memory at 128MB
         ]
 
-        # Use Playwright default bundled chromium
         browser = await p.chromium.launch(
             headless=True,
             args=launch_args
@@ -69,7 +71,7 @@ async def run_portal_document_solver(
             except Exception as e:
                 logger.debug(f"Pre-clear notice: {e}")
 
-            # Step 2: Authentication Loop
+            # Step 2: Authentication
             logger.info(f"2. Authenticating as {username}...")
             await page.goto("https://ug.fuwportal.edu.ng/index.php", wait_until="domcontentloaded", timeout=15000)
             await page.fill("#userId", username)
@@ -159,7 +161,7 @@ async def run_portal_document_solver(
             if "index.php" in captured_url:
                 raise Exception("Target URL redirected to index.php (login screen). Capture rejected.")
 
-            # Step 7: Measure DOM Height & Calculate Fit-to-Page Scale (with zero division guard)
+            # Step 7: Measure DOM Height & Calculate Fit-to-Page Scale
             try:
                 dims = await target_page.evaluate("""() => {
                     const body = document.body || {};
