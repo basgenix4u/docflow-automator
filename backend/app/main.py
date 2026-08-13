@@ -1,7 +1,7 @@
 import os
 import time
 from contextlib import asynccontextmanager
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.future import select
 from app.core.config import settings
@@ -9,6 +9,7 @@ from app.core.database import engine, Base, AsyncSessionLocal, check_database_he
 from app.core.security import hash_password
 from app.models.domain import User, Portal, Workflow
 from app.api import auth, portals, workflows, runs, documents, security
+from app.api.documents import auto_generate_document, AutoGenerateRequest
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -86,7 +87,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Include Routers ONCE to prevent Starlette route collisions
+# Include Routers
 app.include_router(auth.router)
 app.include_router(portals.router)
 app.include_router(workflows.router)
@@ -101,6 +102,17 @@ async def root():
         "message": "DocFlow Automator Backend Engine Live",
         "docs": "/docs",
         "health": "/api/v1/health"
+    }
+
+@app.post("/")
+async def root_post(request: Request, body: AutoGenerateRequest = None):
+    # Handle Vercel query parameter path rewrites if path query param is provided
+    query_path = request.query_params.get("path", "")
+    if "auto-generate" in query_path and body:
+        return await auto_generate_document(body)
+    return {
+        "status": "online",
+        "message": "DocFlow Automator API Root POST Endpoint"
     }
 
 @app.get("/health")
