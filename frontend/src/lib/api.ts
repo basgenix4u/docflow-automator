@@ -7,16 +7,42 @@ import {
   SecurityScan
 } from "@/types";
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || "https://docflow-automator-backend.onrender.com/api/v1";
+// Primary relative API base for Vercel edge proxy, with direct Render HTTPS fallback
+const API_BASE = "/api/v1";
+const FALLBACK_API_BASE = "https://docflow-automator-backend.onrender.com/api/v1";
 
 async function fetchJson<T>(url: string, options?: RequestInit): Promise<T> {
-  const fullUrl = url.startsWith("http") ? url : `${API_BASE}${url}`;
+  const primaryUrl = url.startsWith("http") ? url : `${API_BASE}${url}`;
+  const fallbackUrl = url.startsWith("http") ? url : `${FALLBACK_API_BASE}${url}`;
 
+  // Try primary Vercel proxy endpoint first
   try {
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 90000); // 90s timeout for direct browser-to-backend automation
+    const timeoutId = setTimeout(() => controller.abort(), 65000);
 
-    const res = await fetch(fullUrl, {
+    const res = await fetch(primaryUrl, {
+      ...options,
+      signal: controller.signal,
+      headers: {
+        "Content-Type": "application/json",
+        ...(options?.headers || {}),
+      },
+    });
+    clearTimeout(timeoutId);
+
+    if (res.ok) {
+      return res.json();
+    }
+  } catch (primaryErr) {
+    console.warn("Primary proxy fetch notice, retrying direct Render backend:", primaryErr);
+  }
+
+  // Fallback direct Render HTTPS request
+  try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 80000);
+
+    const res = await fetch(fallbackUrl, {
       ...options,
       signal: controller.signal,
       headers: {
@@ -31,11 +57,11 @@ async function fetchJson<T>(url: string, options?: RequestInit): Promise<T> {
       throw new Error(`API Error [${res.status}]: ${errorText}`);
     }
     return res.json();
-  } catch (err: any) {
-    if (err.name === "AbortError") {
-      throw new Error("Portal automation execution timed out. Please retry.");
+  } catch (fallbackErr: any) {
+    if (fallbackErr.name === "AbortError") {
+      throw new Error("Portal automation execution timed out (server warming up). Please click Generate again.");
     }
-    throw new Error(err.message || "Failed to connect to backend engine.");
+    throw new Error(fallbackErr.message || "Failed to connect to backend engine. Please verify server status.");
   }
 }
 
@@ -64,8 +90,8 @@ export const api = {
     fetchJson<any>("/documents/auto-generate", { method: "POST", body: JSON.stringify(data) }),
   renderPdf: (title: string, html_content: string, page_format = "A4") =>
     fetchJson<Document>("/documents/render-pdf", { method: "POST", body: JSON.stringify({ title, html_content, page_format }) }),
-  getViewUrl: (id: string) => `${API_BASE}/documents/${id}/view`,
-  getDownloadUrl: (id: string) => `${API_BASE}/documents/${id}/download`,
+  getViewUrl: (id: string) => `${FALLBACK_API_BASE}/documents/${id}/view`,
+  getDownloadUrl: (id: string) => `${FALLBACK_API_BASE}/documents/${id}/download`,
 
   // Security
   getSecurityScans: () => fetchJson<SecurityScan[]>("/security/"),
