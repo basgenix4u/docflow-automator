@@ -1,9 +1,8 @@
 # DocFlow Automator — Enterprise Browser Automation, PDF Processing & Portal Security Engine
 
-> **AI Software Factory Production Application**  
 > **Target Portal:** Federal University Wukari (`https://ug.fuwportal.edu.ng/index.php`)  
-> **Demo Credentials:** User ID `BSC/BCH/24/140` | Password `Omotola`  
-> **GitHub Owner:** `basgenix4u` (Abdulbasit Abdulalim)  
+> **Demo Credentials:** User ID `use yours` | Password `****`  
+> by (Abdulbasit Abdulalim)  
 
 ---
 
