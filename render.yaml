@@ -7,6 +7,7 @@ services:
     region: oregon
     plan: free
     branch: main
+    healthCheckPath: /api/v1/health
     envVars:
       - key: PORT
         value: "8000"
@@ -18,3 +19,11 @@ services:
         generateValue: true
       - key: FUW_PORTAL_URL
         value: "https://ug.fuwportal.edu.ng/index.php"
+      - key: CORS_ORIGINS
+        sync: false
+      - key: DATABASE_URL
+        sync: false
+      - key: ALLOW_PUBLIC_REGISTER
+        value: "True"
+      - key: AUTO_GENERATE_RATE_LIMIT
+        value: "8"

@@ -1,13 +1,12 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { Workflow, Play, Terminal, UserCheck, RefreshCw, KeyRound } from "lucide-react";
+import { Workflow, Play, Terminal, RefreshCw, KeyRound } from "lucide-react";
 import { api } from "@/lib/api";
 import { Workflow as WorkflowType, WorkflowRun, LogEntry } from "@/types";
 
 export default function WorkflowsPage() {
   const [workflows, setWorkflows] = useState<WorkflowType[]>([]);
-  const [runs, setRuns] = useState<WorkflowRun[]>([]);
   const [loading, setLoading] = useState(true);
   const [executingId, setExecutingId] = useState<string | null>(null);
 
@@ -25,7 +24,6 @@ export default function WorkflowsPage() {
         api.getRuns()
       ]);
       setWorkflows(wData);
-      setRuns(rData);
       if (rData.length > 0 && !activeRun) {
         setActiveRun(rData[0]);
       }
@@ -37,7 +35,9 @@ export default function WorkflowsPage() {
   };
 
   useEffect(() => {
-    loadWorkflowData();
+    void loadWorkflowData();
+    // Initial operator console load only.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const handleExecuteWorkflow = async (workflowId: string) => {
@@ -55,9 +55,9 @@ export default function WorkflowsPage() {
       });
       setActiveRun(run);
       await loadWorkflowData();
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("Execution error:", err);
-      setErrorMessage(err.message || "Failed to execute portal automation");
+      setErrorMessage(err instanceof Error ? err.message : "Failed to execute portal automation");
     } finally {
       setExecutingId(null);
     }
@@ -67,7 +67,7 @@ export default function WorkflowsPage() {
     ? JSON.parse(activeRun.execution_logs || "[]")
     : [];
 
-  const parsedExtractedData: Record<string, any> = activeRun
+  const parsedExtractedData: Record<string, unknown> = activeRun
     ? JSON.parse(activeRun.extracted_data_json || "{}")
     : {};
 
@@ -204,8 +204,8 @@ export default function WorkflowsPage() {
                   Extracted Student Record Summary
                 </h3>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs font-mono">
-                  <div>User ID: <span className="text-cyan-400 font-bold">{parsedExtractedData.student_id}</span></div>
-                  <div>Portal Webview: <span className="text-slate-300">{parsedExtractedData.popup_webview_url || "https://ug.fuwportal.edu.ng/exam_card_printout.php"}</span></div>
+                  <div>User ID: <span className="text-cyan-400 font-bold">{String(parsedExtractedData.student_id || "")}</span></div>
+                  <div>Portal Webview: <span className="text-slate-300">{String(parsedExtractedData.popup_webview_url || "https://ug.fuwportal.edu.ng/exam_card_printout.php")}</span></div>
                 </div>
               </div>
             )}
@@ -213,13 +213,13 @@ export default function WorkflowsPage() {
             {/* Console Log Window */}
             <div className="bg-slate-950 border border-slate-800 rounded-xl p-4 font-mono text-xs space-y-2 max-h-96 overflow-y-auto">
               <div className="text-slate-500 pb-2 border-b border-slate-900 flex items-center justify-between">
-                <span>// PLAYWRIGHT AUTOMATION ENGINE CONSOLE LOGS</span>
+                <span>{`// PLAYWRIGHT AUTOMATION ENGINE CONSOLE LOGS`}</span>
                 <span>{parsedLogs.length} events</span>
               </div>
 
               {parsedLogs.length === 0 ? (
                 <div className="text-slate-600 py-6 text-center">
-                  No log output. Input credentials on the left and click "Execute Run".
+                  No log output. Input credentials on the left and click Execute Run.
                 </div>
               ) : (
                 parsedLogs.map((log, idx) => (

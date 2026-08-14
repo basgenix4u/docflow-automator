@@ -92,7 +92,8 @@ export interface HealthCheckResponse {
   system: string;
   timestamp: string;
   target_portal: string;
-  demo_user: string;
-  storage_dir: string;
+  database_online?: boolean;
+  storage_dir?: string;
   storage_ready: boolean;
+  auth_required_for_operators?: boolean;
 }

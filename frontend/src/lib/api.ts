@@ -4,96 +4,110 @@ import {
   Workflow,
   WorkflowRun,
   Document,
-  SecurityScan
+  SecurityScan,
+  User,
 } from "@/types";
+import { getToken } from "@/lib/auth";
 
-// Primary relative API base for Vercel edge proxy, with direct Render HTTPS fallback
 const API_BASE = "/api/v1";
-const FALLBACK_API_BASE = "https://docflow-automator-backend.onrender.com/api/v1";
+const FALLBACK_API_BASE =
+  process.env.NEXT_PUBLIC_API_FALLBACK_URL ||
+  "https://docflow-automator-backend.onrender.com/api/v1";
+
+function authHeaders(): HeadersInit {
+  const token = getToken();
+  return token ? { Authorization: `Bearer ${token}` } : {};
+}
 
 async function fetchJson<T>(url: string, options?: RequestInit): Promise<T> {
   const primaryUrl = url.startsWith("http") ? url : `${API_BASE}${url}`;
   const fallbackUrl = url.startsWith("http") ? url : `${FALLBACK_API_BASE}${url}`;
+  const headers: HeadersInit = {
+    "Content-Type": "application/json",
+    ...authHeaders(),
+    ...(options?.headers || {}),
+  };
 
-  // Try primary Vercel proxy endpoint first
   try {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 65000);
-
-    const res = await fetch(primaryUrl, {
-      ...options,
-      signal: controller.signal,
-      headers: {
-        "Content-Type": "application/json",
-        ...(options?.headers || {}),
-      },
-    });
+    const res = await fetch(primaryUrl, { ...options, signal: controller.signal, headers });
     clearTimeout(timeoutId);
-
     if (res.ok) {
       return res.json();
     }
+    if (res.status === 401 || res.status === 403) {
+      const errorText = await res.text();
+      throw new Error(`API Error [${res.status}]: ${errorText || "Authentication required"}`);
+    }
   } catch (primaryErr) {
-    console.warn("Primary proxy fetch notice, retrying direct Render backend:", primaryErr);
+    if (primaryErr instanceof Error && primaryErr.message.startsWith("API Error")) {
+      throw primaryErr;
+    }
+    console.warn("Primary proxy fetch notice, retrying direct backend:", primaryErr);
   }
 
-  // Fallback direct Render HTTPS request
   try {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 80000);
-
-    const res = await fetch(fallbackUrl, {
-      ...options,
-      signal: controller.signal,
-      headers: {
-        "Content-Type": "application/json",
-        ...(options?.headers || {}),
-      },
-    });
+    const res = await fetch(fallbackUrl, { ...options, signal: controller.signal, headers });
     clearTimeout(timeoutId);
-
     if (!res.ok) {
       const errorText = await res.text();
       throw new Error(`API Error [${res.status}]: ${errorText}`);
     }
     return res.json();
-  } catch (fallbackErr: any) {
-    if (fallbackErr.name === "AbortError") {
+  } catch (fallbackErr: unknown) {
+    const err = fallbackErr as { name?: string; message?: string };
+    if (err.name === "AbortError") {
       throw new Error("Portal automation execution timed out (server warming up). Please click Generate again.");
     }
-    throw new Error(fallbackErr.message || "Failed to connect to backend engine. Please verify server status.");
+    throw new Error(err.message || "Failed to connect to backend engine. Please verify server status.");
   }
 }
 
 export const api = {
   getHealth: () => fetchJson<HealthCheckResponse>("/health"),
 
-  // Portals
-  getPortals: () => fetchJson<Portal[]>("/portals/"),
-  createPortal: (data: Partial<Portal>) => fetchJson<Portal>("/portals/", { method: "POST", body: JSON.stringify(data) }),
-  testPortalAuth: (id: string) => fetchJson<any>(`/portals/${id}/test-auth`, { method: "POST" }),
+  register: (data: { email: string; full_name: string; password: string }) =>
+    fetchJson<User>("/auth/register", { method: "POST", body: JSON.stringify(data) }),
+  login: (data: { email: string; password: string }) =>
+    fetchJson<{ access_token: string; token_type: string; user: User }>("/auth/login", {
+      method: "POST",
+      body: JSON.stringify(data),
+    }),
+  me: () => fetchJson<User>("/auth/me"),
 
-  // Workflows
+  getPortals: () => fetchJson<Portal[]>("/portals/"),
+  createPortal: (data: Partial<Portal>) =>
+    fetchJson<Portal>("/portals/", { method: "POST", body: JSON.stringify(data) }),
+  testPortalAuth: (id: string) => fetchJson<Record<string, unknown>>(`/portals/${id}/test-auth`, { method: "POST" }),
+
   getWorkflows: () => fetchJson<Workflow[]>("/workflows/"),
-  createWorkflow: (data: any) => fetchJson<Workflow>("/workflows/", { method: "POST", body: JSON.stringify(data) }),
+  createWorkflow: (data: unknown) =>
+    fetchJson<Workflow>("/workflows/", { method: "POST", body: JSON.stringify(data) }),
   runWorkflow: (id: string, credentials?: { custom_username?: string; custom_password?: string }) =>
     fetchJson<WorkflowRun>(`/workflows/${id}/run`, { method: "POST", body: JSON.stringify(credentials || {}) }),
 
-  // Runs
   getRuns: () => fetchJson<WorkflowRun[]>("/runs/"),
   getRun: (id: string) => fetchJson<WorkflowRun>(`/runs/${id}`),
-  getRunLogs: (id: string) => fetchJson<{ run_id: string; status: string; logs: any[] }>(`/runs/${id}/logs`),
+  getRunLogs: (id: string) => fetchJson<{ run_id: string; status: string; logs: unknown[] }>(`/runs/${id}/logs`),
 
-  // Documents
   getDocuments: () => fetchJson<Document[]>("/documents/"),
-  autoGenerateDocument: (data: { username: string; password: string; document_type: string; paper_format: string }) =>
-    fetchJson<any>("/documents/auto-generate", { method: "POST", body: JSON.stringify(data) }),
+  autoGenerateDocument: (data: {
+    username: string;
+    password: string;
+    document_type: string;
+    paper_format: string;
+  }) => fetchJson<Record<string, unknown>>("/documents/auto-generate", { method: "POST", body: JSON.stringify(data) }),
   renderPdf: (title: string, html_content: string, page_format = "A4") =>
-    fetchJson<Document>("/documents/render-pdf", { method: "POST", body: JSON.stringify({ title, html_content, page_format }) }),
+    fetchJson<Document>("/documents/render-pdf", {
+      method: "POST",
+      body: JSON.stringify({ title, html_content, page_format }),
+    }),
   getViewUrl: (id: string) => `${FALLBACK_API_BASE}/documents/${id}/view`,
   getDownloadUrl: (id: string) => `${FALLBACK_API_BASE}/documents/${id}/download`,
 
-  // Security
   getSecurityScans: () => fetchJson<SecurityScan[]>("/security/"),
   triggerSecurityScan: (portal_id: string) =>
     fetchJson<SecurityScan>("/security/scan", { method: "POST", body: JSON.stringify({ portal_id }) }),

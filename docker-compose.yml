@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   backend:
     build:
@@ -7,17 +5,22 @@ services:
       dockerfile: Dockerfile
     ports:
       - "8000:8000"
+    env_file:
+      - path: .env
+        required: false
     environment:
-      - PORT=8000
-      - HOST=0.0.0.0
-      - DEBUG=False
-      - SECRET_KEY=docflow_production_secure_secret_key_2026
-      - FUW_PORTAL_URL=https://ug.fuwportal.edu.ng/index.php
-      - DEFAULT_DEMO_USERNAME=BSC/BCH/24/140
-      - DEFAULT_DEMO_PASSWORD=Omotola
+      PORT: "8000"
+      HOST: "0.0.0.0"
+      DEBUG: "False"
+      STORAGE_DIR: /app/storage/pdfs
     volumes:
-      - pdf_storage:/home/user/docflow-automator/storage/pdfs
-    restart: always
+      - pdf_storage:/app/storage/pdfs
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/api/v1/health')"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+    restart: unless-stopped
 
   frontend:
     build:
@@ -26,10 +29,11 @@ services:
     ports:
       - "3000:3000"
     environment:
-      - NEXT_PUBLIC_API_URL=http://backend:8000/api/v1
+      NEXT_PUBLIC_API_URL: http://backend:8000/api
     depends_on:
-      - backend
-    restart: always
+      backend:
+        condition: service_healthy
+    restart: unless-stopped
 
 volumes:
   pdf_storage:

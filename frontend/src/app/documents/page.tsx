@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { FileText, Download, Plus, RefreshCw, FileCode, CheckCircle2 } from "lucide-react";
+import { FileText, Download, Plus, RefreshCw } from "lucide-react";
 import { api } from "@/lib/api";
 import { Document as DocumentType } from "@/types";
 
@@ -11,7 +11,7 @@ export default function DocumentsPage() {
 
   // PDF Renderer state
   const [showRenderModal, setShowRenderModal] = useState(false);
-  const [renderTitle, setRenderTitle] = useState("FUW Student Verification Report — BSC/BCH/24/140");
+  const [renderTitle, setRenderTitle] = useState("FUW Student Verification Report");
   const [renderFormat, setRenderFormat] = useState("A4");
   const [renderHtml, setRenderHtml] = useState(`<!DOCTYPE html>
 <html>
@@ -27,11 +27,11 @@ export default function DocumentsPage() {
 <body>
   <h1>Federal University Wukari — Student Verification Report</h1>
   <div class="card">
-    <p><span class="label">Student Name:</span> IBRAHIM, Abibat Abiodun</p>
-    <p><span class="label">Matriculation No:</span> BSC/BCH/24/140</p>
-    <p><span class="label">Department:</span> Biochemistry</p>
+    <p><span class="label">Student Name:</span> SAMPLE STUDENT</p>
+    <p><span class="label">Matriculation No:</span> DEPT/CRS/YY/000</p>
+    <p><span class="label">Department:</span> Example Department</p>
     <p><span class="label">Level:</span> 200</p>
-    <p><span class="label">Verification Status:</span> PASS — Live Portal Validated</p>
+    <p><span class="label">Verification Status:</span> TEMPLATE — replace with live data</p>
   </div>
 </body>
 </html>`);

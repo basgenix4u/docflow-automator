@@ -258,8 +258,10 @@ async def run_portal_document_solver(
 
 if __name__ == "__main__":
     import sys
-    u = sys.argv[1] if len(sys.argv) > 1 else "ENG/COE/21/013"
-    p = sys.argv[2] if len(sys.argv) > 2 else "olaleke"
+    if len(sys.argv) < 3:
+        raise SystemExit("Usage: python portal_document_solver.py <user_id> <password> [exam|crg|rec|result] [A4|A5]")
+    u = sys.argv[1]
+    p = sys.argv[2]
     t = sys.argv[3] if len(sys.argv) > 3 else "crg"
     fmt = sys.argv[4] if len(sys.argv) > 4 else "A4"
     asyncio.run(run_portal_document_solver(u, p, t, fmt))

@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { Globe2, ShieldCheck, Play, Plus, CheckCircle2, AlertCircle, RefreshCw, KeyRound } from "lucide-react";
+import { Globe2, ShieldCheck, Plus, RefreshCw } from "lucide-react";
 import { api } from "@/lib/api";
 import { Portal } from "@/types";
 
@@ -9,7 +9,7 @@ export default function PortalsPage() {
   const [portals, setPortals] = useState<Portal[]>([]);
   const [loading, setLoading] = useState(true);
   const [testingId, setTestingId] = useState<string | null>(null);
-  const [testResult, setTestResult] = useState<any | null>(null);
+  const [testResult, setTestResult] = useState<Record<string, unknown> | null>(null);
 
   // New Portal Modal state
   const [showModal, setShowModal] = useState(false);
@@ -40,9 +40,9 @@ export default function PortalsPage() {
     try {
       const res = await api.testPortalAuth(portalId);
       setTestResult(res);
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("Auth test error:", err);
-      setTestResult({ error: err.message });
+      setTestResult({ error: err instanceof Error ? err.message : "Auth test failed" });
     } finally {
       setTestingId(null);
     }
@@ -98,16 +98,16 @@ export default function PortalsPage() {
             : "bg-emerald-950/40 border-emerald-800 text-emerald-300"
         }`}>
           <div className="flex items-center justify-between font-bold">
-            <span>Portal Security Audit Results: {testResult.portal_name || "Target Portal"}</span>
+            <span>Portal Security Audit Results: {String(testResult.portal_name || "Target Portal")}</span>
             <button onClick={() => setTestResult(null)} className="text-slate-400 hover:text-slate-200">Close</button>
           </div>
           {testResult.error ? (
-            <p>Error: {testResult.error}</p>
+            <p>Error: {String(testResult.error)}</p>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2 text-slate-300">
-              <div>Target URL: <span className="text-white">{testResult.url}</span></div>
-              <div>Security Score: <span className="text-emerald-400 font-bold">{testResult.security_score}/100</span></div>
-              <div>Vulnerabilities: <span className="text-amber-400 font-bold">{testResult.vulnerabilities?.length || 0}</span></div>
+              <div>Target URL: <span className="text-white">{String(testResult.url || "")}</span></div>
+              <div>Security Score: <span className="text-emerald-400 font-bold">{String(testResult.security_score ?? 0)}/100</span></div>
+              <div>Vulnerabilities: <span className="text-amber-400 font-bold">{Array.isArray(testResult.vulnerabilities) ? testResult.vulnerabilities.length : Number(testResult.vulnerabilities || 0)}</span></div>
             </div>
           )}
         </div>
@@ -215,7 +215,7 @@ export default function PortalsPage() {
                   <label className="text-slate-300 block font-sans">Demo Username</label>
                   <input
                     type="text"
-                    placeholder="BSC/BCH/24/140"
+                    placeholder="Student User ID"
                     value={newDemoUser}
                     onChange={(e) => setNewDemoUser(e.target.value)}
                     className="w-full bg-slate-950 border border-slate-800 rounded-lg p-2.5 text-slate-100 focus:outline-none focus:border-cyan-500"
