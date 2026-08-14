@@ -11,3 +11,6 @@ async def test_health_check_endpoint():
         assert data["status"] == "online"
         assert data["target_portal"] == "https://ug.fuwportal.edu.ng/index.php"
         assert data["storage_ready"] is True
+        assert data["database_online"] is True
+        assert response.headers.get("x-content-type-options") == "nosniff"
+        assert response.headers.get("x-frame-options") == "DENY"

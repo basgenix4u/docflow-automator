@@ -65,9 +65,12 @@ jobs:
       - name: Run Backend Integration & Database Tests
         env:
           DATABASE_URL: "postgresql+asyncpg://test_user:test_password@localhost:5432/test_docflow"
+          SECRET_KEY: "ci-test-secret-key-not-for-production"
+          DEBUG: "False"
+          CORS_ORIGINS: "http://localhost:3000"
         run: |
           cd backend
-          PYTHONPATH=. pytest tests
+          PYTHONPATH=. pytest tests -q
 
   frontend-build:
     runs-on: ubuntu-latest

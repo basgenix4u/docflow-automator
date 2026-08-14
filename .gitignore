@@ -8,8 +8,6 @@ ENV/
 .pytest_cache/
 .coverage
 htmlcov/
-*.png
-*.html
 
 # Node
 node_modules/
@@ -24,12 +22,17 @@ yarn-error.log*
 # Environment & Secrets
 .env
 .env.local
+.env.*.local
 *.pem
 *.key
+.github_pat
+.git-credentials
 
 # Local Data & PDFs
 storage/pdfs/*
 !storage/pdfs/.gitkeep
+backend/storage/pdfs/*
+!backend/storage/pdfs/.gitkeep
 *.db
 *.sqlite
 *.sqlite3

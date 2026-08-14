@@ -1,0 +1,7 @@
+User-agent: *
+Disallow: /portals
+Disallow: /workflows
+Disallow: /documents
+Disallow: /security
+Disallow: /login
+Disallow: /register

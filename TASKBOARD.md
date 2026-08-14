@@ -2,52 +2,69 @@
 
 `[ ]` Pending · `[~]` In Progress (max **one**) · `[x]` Complete
 
+**Source of truth:** `docs/01-ARCHITECTURE.md` + live FUW portal product behaviour  
+**GitHub:** `basgenix4u/docflow-automator`
+
 ---
 
 ## Stage 1 — Architecture & Design Approval ✅ COMPLETE
-- [x] 1.1 Ingest user product requirements & clarify scope
+- [x] 1.1 Ingest product requirements (architecture spec + implemented student printer)
 - [x] 1.2 Propose System Architecture, Schema, API Contracts & Master Task Board
-- [x] 1.3 Obtain user approval on Stage 1 Architecture & FUW Portal automation scope
+- [x] 1.3 Validate implementation vs architecture (see `docs/02-GAP-ANALYSIS.md`)
 
 ---
 
 ## Stage 2 — Development Environment Setup ✅ COMPLETE
-- [x] 2.1 Scaffold Monorepo Structure (`backend/`, `frontend/`, `docs/`)
-- [x] 2.2 Configure Backend (`requirements.txt`, `pyproject.toml`, FastAPI entrypoint)
-- [x] 2.3 Configure Frontend (`package.json`, `tsconfig.json`, Tailwind v4, ESLint)
-- [x] 2.4 Configure Environment Variables (`.env.example`, `.env`)
-- [x] 2.5 Install Dependencies & Setup Playwright Engine
-- [x] 2.6 Implement Smoke Test Health Check API Endpoint (`/api/v1/health`)
-- [x] 2.7 Verify Dev Environment & Server Execution
+- [x] 2.1 Scaffold monorepo (`backend/`, `frontend/`, `docs/`)
+- [x] 2.2 Configure backend (`requirements.txt`, FastAPI entrypoint)
+- [x] 2.3 Configure frontend (`package.json`, `tsconfig.json`, Tailwind v4)
+- [x] 2.4 Sanitize environment templates (no real student secrets, portable paths)
+- [x] 2.5 Install dependencies & Playwright
+- [x] 2.6 Smoke-test health endpoint (`/api/v1/health`)
+- [x] 2.7 Verify local tooling
 
 ---
 
 ## Stage 3 — Backend Core Implementation ✅ COMPLETE
-- [x] 3.1 Implement SQLAlchemy Domain Models & Database Setup (`User`, `Portal`, `Workflow`, `WorkflowRun`, `Document`, `SecurityScan`)
-- [x] 3.2 Implement Authentication Core (Argon2id, JWT, User Router)
-- [x] 3.3 Implement Portal Management Service & API Router
-- [x] 3.4 Implement Playwright Browser Automation Runner Engine (`fuw_portal.py` & `browser_engine.py`)
-- [x] 3.5 Implement Workflow Execution & Live Logging Service
-- [x] 3.6 Implement Document Detection & A4/A5 PDF Exporter Service (`pdf_exporter.py`)
-- [x] 3.7 Implement Portal Authentication Control Security Testing Engine (`security_scanner.py`)
-- [x] 3.8 Write Automated Unit & Integration Tests (`pytest tests` — 3/3 passed)
+- [x] 3.1 Domain models & database
+- [x] 3.2 Authentication core (Argon2id, JWT, user router)
+- [x] 3.3 Portal management service & API
+- [x] 3.4 Playwright browser automation
+- [x] 3.5 Workflow execution & logging
+- [x] 3.6 Document detection & A4/A5 PDF exporter
+- [x] 3.7 Portal authentication security scanner
+- [x] 3.8 Automated unit & integration tests
 
 ---
 
 ## Stage 4 — Frontend UI & Live Integration ✅ COMPLETE
-- [x] 4.1 Build App Shell, Navigation & Layout (`Navbar`, `Sidebar`, `layout.tsx`)
-- [x] 4.2 Build Authentication Pages & Session State Management
-- [x] 4.3 Build Portals Management Dashboard (`/portals`)
-- [x] 4.4 Build Interactive Workflow Builder & Execution Monitor (`/workflows`)
-- [x] 4.5 Build Document Studio & In-App PDF Previewer (A4/A5) (`/documents`)
-- [x] 4.6 Build Security Testing Dashboard & Vulnerability Audit Reports (`/security`)
-- [x] 4.7 End-to-End Live API Integration & Next.js Production Build Verification (`npm run build` — clean)
+- [x] 4.1 App shell, navigation & layout
+- [x] 4.2 Authentication pages & session state
+- [x] 4.3 Portals management dashboard
+- [x] 4.4 Workflow builder & execution monitor
+- [x] 4.5 Document studio & PDF preview/download
+- [x] 4.6 Security testing dashboard
+- [x] 4.7 Live API integration (`npm run build` clean)
 
 ---
 
 ## Stage 5 — Production Readiness & Deployment ✅ COMPLETE
-- [x] 5.1 Create Containerization Setup (`Dockerfile`, `docker-compose.yml`)
-- [x] 5.2 Configure CI/CD Pipeline Workflow (`.github/workflows/ci.yml`)
-- [x] 5.3 Write Comprehensive Production `README.md` & Deployment Docs
-- [x] 5.4 Execute Final Integration & End-to-End Verification Test Suite
-- [x] 5.5 Create GitHub Repository `docflow-automator` & Push Production Codebase
+- [x] 5.1 Containerization (`Dockerfile`, `docker-compose.yml`)
+- [x] 5.2 CI/CD (`.github/workflows/ci.yml`)
+- [x] 5.3 Production README & deployment docs
+- [x] 5.4 Integration verification
+- [x] 5.5 GitHub repository published
+
+---
+
+## Stage 6 — Production Hardening ✅ COMPLETE
+- [x] 6.1 Architecture gap analysis written
+- [x] 6.2 Secure configuration: secrets, CORS, admin seed, env templates
+- [x] 6.3 RBAC on mutating/admin APIs + block privilege escalation
+- [x] 6.4 Rate-limit public portal automation; security headers
+- [x] 6.5 Restore `POST /documents/render-pdf`; lock document/run listings
+- [x] 6.6 Frontend login/register + JWT client + protect operator pages
+- [x] 6.7 Remove committed PII / demo student credentials from templates & UI
+- [x] 6.8 Expand automated tests (authz, register role lock, rate limit, health)
+- [x] 6.9 Docker/CI/Render/README production polish
+- [x] 6.10 All tests pass (`pytest` 10/10); frontend production build succeeds

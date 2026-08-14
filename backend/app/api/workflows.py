@@ -9,7 +9,8 @@ from sqlalchemy.future import select
 from typing import List
 from app.core.config import settings
 from app.core.database import get_db, AsyncSessionLocal
-from app.models.domain import Workflow, Portal, WorkflowRun, Document, utc_now
+from app.core.deps import operator_user
+from app.models.domain import Workflow, Portal, WorkflowRun, Document, utc_now, User
 from app.schemas.dto import WorkflowCreate, WorkflowResponse, RunExecuteRequest, RunResponse
 from portal_document_solver import run_portal_document_solver
 
@@ -44,7 +45,8 @@ async def create_workflow(data: WorkflowCreate, db: AsyncSession = Depends(get_d
 @router.post("/{workflow_id}/run", response_model=RunResponse)
 async def run_workflow(
     workflow_id: str,
-    req: RunExecuteRequest
+    req: RunExecuteRequest,
+    _: User = Depends(operator_user),
 ):
     """
     Decoupled Production Workflow Execution:

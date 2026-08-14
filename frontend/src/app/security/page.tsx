@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { ShieldAlert, ShieldCheck, Play, AlertTriangle, CheckCircle2, RefreshCw } from "lucide-react";
+import { ShieldAlert, ShieldCheck, Play, AlertTriangle, RefreshCw } from "lucide-react";
 import { api } from "@/lib/api";
 import { Portal, SecurityScan, SecurityTest, Vulnerability } from "@/types";
 
@@ -32,7 +32,9 @@ export default function SecurityPage() {
   };
 
   useEffect(() => {
-    loadSecurityData();
+    void loadSecurityData();
+    // Initial operator console load only.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const handleRunSecurityScan = async (portalId: string) => {
@@ -110,7 +112,7 @@ export default function SecurityPage() {
                 {activeScan ? activeScan.score : 78}<span className="text-2xl text-slate-500">/100</span>
               </div>
               <p className="text-xs text-slate-400">
-                Target: {fuwPortal?.base_url || "ug.fuwportal.edu.ng"}
+                Target: {fuwPortal?.base_url || "ug.fuwportal.edu.ng"} · {scans.length} stored scans
               </p>
             </div>
 

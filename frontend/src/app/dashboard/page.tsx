@@ -3,26 +3,19 @@
 import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import {
-  Globe2,
   Printer,
   FileText,
-  ShieldCheck,
   Zap,
   Activity,
-  CheckCircle2,
-  Clock,
-  ArrowRight,
   RefreshCw,
-  KeyRound,
   Download,
   Eye,
   FileCheck,
-  ExternalLink,
   AlertTriangle,
   Info
 } from "lucide-react";
 import { api } from "@/lib/api";
-import { Document, WorkflowRun } from "@/types";
+import { Document } from "@/types";
 
 export default function DashboardPage() {
   // Form inputs - NO hardcoded values
@@ -35,18 +28,13 @@ export default function DashboardPage() {
   const [generating, setGenerating] = useState(false);
   const [statusMsg, setStatusMsg] = useState<string | null>(null);
   const [progressStep, setProgressStep] = useState<string | null>(null);
-  const [generatedDoc, setGeneratedDoc] = useState<any | null>(null);
+  const [generatedDoc, setGeneratedDoc] = useState<Record<string, unknown> | null>(null);
   const [recentDocs, setRecentDocs] = useState<Document[]>([]);
-  const [recentRuns, setRecentRuns] = useState<WorkflowRun[]>([]);
 
   const loadDashboardData = async () => {
     try {
-      const [dData, rData] = await Promise.all([
-        api.getDocuments(),
-        api.getRuns()
-      ]);
+      const dData = await api.getDocuments();
       setRecentDocs(Array.isArray(dData) ? dData : []);
-      setRecentRuns(Array.isArray(rData) ? rData : []);
     } catch (err) {
       console.error("Data load error:", err);
     }
@@ -89,25 +77,28 @@ export default function DashboardPage() {
       });
 
       if (res?.status === "error" || !res?.id) {
-        throw new Error(res?.message || res?.detail || "Portal document generation failed. Please verify credentials.");
+        throw new Error(String(res?.message || res?.detail || "Portal document generation failed. Please verify credentials."));
       }
 
       setProgressStep("Step 3/3: Document captured & compiled to 1-page PDF!");
       setGeneratedDoc(res);
 
       // Redirect pre-opened tab to the generated PDF URL
-      const viewUrl = res.view_url || (res.id ? api.getViewUrl(res.id) : null);
+      const viewUrl = typeof res.view_url === "string"
+        ? res.view_url
+        : (typeof res.id === "string" ? api.getViewUrl(res.id) : null);
       if (viewUrl && pdfTab && !pdfTab.closed) {
         pdfTab.location.href = viewUrl;
       }
 
       await loadDashboardData();
-    } catch (err: any) {
+    } catch (err: unknown) {
       if (pdfTab && !pdfTab.closed) {
         pdfTab.close();
       }
       console.error("Auto generate error:", err);
-      setStatusMsg(`Generation Error: ${err.message || "Failed to generate document. Please verify student User ID and password."}`);
+      const message = err instanceof Error ? err.message : "Failed to generate document. Please verify student User ID and password.";
+      setStatusMsg(`Generation Error: ${message}`);
     } finally {
       setGenerating(false);
       setTimeout(() => setProgressStep(null), 8000);
@@ -126,7 +117,7 @@ export default function DashboardPage() {
           Universal Student Document Auto-Printer & PDF Generator
         </h1>
         <p className="text-emerald-100/80 text-sm max-w-3xl leading-relaxed">
-          Input any student's User ID and passcode to automatically log in to Federal University Wukari portal, intercept live document webviews (Exam Cards, Course Forms, Payment Receipts, Results), and export pristine 1-page A4/A5 PDFs that open instantly in your browser.
+          Input any student User ID and passcode to automatically log in to Federal University Wukari portal, intercept live document webviews (Exam Cards, Course Forms, Payment Receipts, Results), and export pristine 1-page A4/A5 PDFs that open instantly in your browser.
         </p>
       </div>
 
@@ -261,24 +252,24 @@ export default function DashboardPage() {
         )}
 
         {/* Generated PDF Card with Instant View & Download Buttons */}
-        {generatedDoc && generatedDoc.id && (
+        {generatedDoc && typeof generatedDoc.id === "string" && (
           <div className="bg-emerald-900/60 border-2 border-emerald-500 p-5 rounded-xl space-y-4 text-xs font-mono shadow-2xl">
             <div className="flex items-center justify-between border-b border-emerald-800 pb-3">
               <div className="flex items-center space-x-2">
                 <FileCheck className="w-5 h-5 text-emerald-400" />
-                <span className="font-bold text-white text-sm">{generatedDoc.title || "Portal Document"}</span>
+                <span className="font-bold text-white text-sm">{String(generatedDoc.title || "Portal Document")}</span>
               </div>
               <span className="px-2.5 py-0.5 rounded bg-emerald-950 text-emerald-300 border border-emerald-700 text-[10px] font-bold">
-                {generatedDoc.page_format || "PDF"} 1-PAGE PDF
+                {String(generatedDoc.page_format || "PDF")} 1-PAGE PDF
               </span>
             </div>
 
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-              <span className="text-emerald-200">Size: {Math.round((generatedDoc.file_size_bytes || 1024) / 1024)} KB</span>
+              <span className="text-emerald-200">Size: {Math.round((Number(generatedDoc.file_size_bytes) || 1024) / 1024)} KB</span>
 
               <div className="flex items-center space-x-3">
                 <a
-                  href={generatedDoc.view_url || api.getViewUrl(generatedDoc.id)}
+                  href={typeof generatedDoc.view_url === "string" ? generatedDoc.view_url : api.getViewUrl(String(generatedDoc.id))}
                   target="_blank"
                   rel="noreferrer"
                   className="px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs transition-all flex items-center gap-2 shadow-lg shadow-emerald-600/20"
@@ -288,7 +279,7 @@ export default function DashboardPage() {
                 </a>
 
                 <a
-                  href={generatedDoc.download_url || api.getDownloadUrl(generatedDoc.id)}
+                  href={typeof generatedDoc.download_url === "string" ? generatedDoc.download_url : api.getDownloadUrl(String(generatedDoc.id))}
                   target="_blank"
                   rel="noreferrer"
                   className="px-4 py-2 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs transition-all flex items-center gap-2 shadow-lg shadow-emerald-500/20"

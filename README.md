@@ -1,77 +1,122 @@
-# DocFlow Automator — Enterprise Browser Automation, PDF Processing & Portal Security Engine
+# DocFlow Automator
 
-> **Target Portal:** Federal University Wukari (`https://ug.fuwportal.edu.ng/index.php`)  
-> **Demo Credentials:** User ID `use yours` | Password `****`  
-> by (Abdulbasit Abdulalim)  
+Enterprise browser automation, A4/A5 PDF compilation, and portal security testing — built for the Federal University Wukari student portal (`https://ug.fuwportal.edu.ng/index.php`).
 
----
-
-## 🌟 Overview
-
-**DocFlow Automator** is a production-ready application built to orchestrate multi-user browser automation workflows, navigate dynamic web dashboards, extract student profile records, compile standardized A4/A5 PDF reports, and automatically audit web portals for authentication security controls.
-
-### Key Capabilities
-- **Playwright Automation Engine**: Headless Chromium worker executing automated login, form submissions, and DOM extraction on `https://ug.fuwportal.edu.ng/index.php`.
-- **Standardized A4/A5 PDF Exporter**: High-fidelity PDF compilation with custom print CSS `@page` margins, metadata headers, and downloadable file storage.
-- **Authentication Security Scanner**: Automated security auditing for HTTP security headers (HSTS, CSP, X-Frame-Options), CSRF anti-forgery tokens, session cookie security flags (`HttpOnly`, `Secure`), and transport encryption.
-- **Interactive Command Center**: Next.js 15 web application with real-time execution logs, document viewer, workflow builder, and security audit dashboards.
+**Author:** Abdulbasit Abdulalim  
+**Repository:** [basgenix4u/docflow-automator](https://github.com/basgenix4u/docflow-automator)
 
 ---
 
-## 🚀 Quick Start & Local Setup
+## What it does
 
-### 1. Backend Service (FastAPI)
+| Audience | Capability |
+|---|---|
+| Students | Enter User ID + password, generate Examination Card, Course Registration Form, Payment Receipt, or Results as a 1-page A4/A5 PDF |
+| Operators | Authenticated command center for portals, workflow runs, document studio, and security scans |
+
+Playwright (Chromium) logs into the live portal, intercepts document webviews, and exports print-faithful PDFs.
+
+---
+
+## Architecture
+
+```
+Next.js 15 (App Router)  ──REST──▶  FastAPI + SQLAlchemy
+                                        │
+                         Playwright Chromium + PDF storage
+                                        │
+                              SQLite or PostgreSQL
+```
+
+Design spec: [`docs/01-ARCHITECTURE.md`](docs/01-ARCHITECTURE.md)  
+Gap analysis: [`docs/02-GAP-ANALYSIS.md`](docs/02-GAP-ANALYSIS.md)  
+Deploy: [`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md)  
+Task board: [`TASKBOARD.md`](TASKBOARD.md)
+
+---
+
+## Quick start
+
 ```bash
+cp .env.example .env
+# Set SECRET_KEY. Optionally set ADMIN_EMAIL + ADMIN_PASSWORD.
+
+# Backend
 cd backend
 pip install -r requirements.txt
 playwright install chromium
-python -m uvicorn app.main:app --host 0.0.0.0 --port 8000
-```
-- **API Health Check**: `http://localhost:8000/api/v1/health`
-- **OpenAPI Docs**: `http://localhost:8000/docs`
+PYTHONPATH=. python -m uvicorn app.main:app --host 0.0.0.0 --port 8000
 
-### 2. Frontend Application (Next.js 15)
-```bash
+# Frontend
 cd frontend
 npm install
 npm run dev
 ```
-- **Web UI Preview**: `http://localhost:3000`
+
+- App: http://localhost:3000  
+- Health: http://localhost:8000/api/v1/health  
+- OpenAPI: http://localhost:8000/docs  
+
+**Never commit student portal passwords.** Each user types their own credentials at generate time; they are not stored.
 
 ---
 
-## 🐳 Docker Deployment
+## Docker
 
-To launch the complete application stack with Docker Compose:
 ```bash
-docker-compose up --build -d
+cp .env.example .env
+docker compose up --build
 ```
 
 ---
 
-## 🧪 Testing & Quality Assurance
+## API surface
 
-### Run Backend Integration Tests
+### Public
+- `GET /api/v1/health`
+- `POST /api/v1/auth/register` (always creates `ENGINEER`)
+- `POST /api/v1/auth/login`
+- `GET /api/v1/portals/`, `GET /api/v1/workflows/`
+- `POST /api/v1/documents/auto-generate` (rate limited)
+- `GET /api/v1/documents/{id}/view|download`
+
+### Operator (`Authorization: Bearer <jwt>`, role `ENGINEER` or `ADMIN`)
+- `GET /api/v1/auth/me`
+- Portal create + `POST /portals/{id}/test-auth`
+- Workflow create + `POST /workflows/{id}/run`
+- Runs list / detail / logs
+- Documents list + `POST /documents/render-pdf`
+- Security scans
+
+---
+
+## Security controls
+
+- Argon2id password hashing, JWT access tokens
+- Public registration cannot self-promote to `ADMIN`
+- Operator APIs require RBAC
+- CORS allow-list via `CORS_ORIGINS`
+- Security headers (`X-Content-Type-Options`, `X-Frame-Options`, `Referrer-Policy`, HSTS in non-debug)
+- In-memory sliding-window rate limit on portal automation
+- Document listings are not world-readable
+- Portal demo passwords are never returned in API responses
+
+---
+
+## Tests
+
 ```bash
 cd backend
-PYTHONPATH=. pytest tests
-```
+PYTHONPATH=. pytest tests -q
 
-### Run Frontend Typecheck & Build
-```bash
 cd frontend
 npm run build
 ```
 
----
-
-## 🔒 Security Practices & Compliance
-- **Password Hashing**: Argon2id via `passlib`.
-- **JWT Session Tokens**: Statelessly validated JWTs with short expiration windows.
-- **Input Validation**: Strict schema enforcement using Pydantic v2.
-- **Protected Credentials**: Demo credentials safely loaded via `.env` environment variables.
+Live FUW portal jobs are **not** executed in unit tests. The automation solver is mocked.
 
 ---
 
-## 📄 License
-MIT License • Built by AI Software Factory
+## License
+
+MIT License
