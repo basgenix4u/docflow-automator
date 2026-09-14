@@ -1,10 +1,11 @@
+import os
 import asyncio
 from app.services.fuw_portal import execute_fuw_portal_automation
 
 async def test_fuw_automation_user2():
     data, logs, pdf_path = await execute_fuw_portal_automation(
-        username="REDACTED_USERNAME",
-        password="REDACTED_PASSWORD",
+        username=os.environ.get("FUW_PORTAL_USERNAME", ""),
+        password=os.environ.get("FUW_PORTAL_PASSWORD", ""),
         page_format="A5"
     )
     print("Extracted Data:", data)

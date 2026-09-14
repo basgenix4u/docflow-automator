@@ -1,3 +1,4 @@
+import os
 import asyncio
 from playwright.async_api import async_playwright
 
@@ -12,8 +13,8 @@ async def render_exact_portal_pdf():
         await page.goto("https://ug.fuwportal.edu.ng/index.php", wait_until="networkidle")
 
         print("2. Entering credentials for REDACTED_USERNAME...")
-        await page.fill("#userId", "REDACTED_USERNAME")
-        await page.fill("#password", "REDACTED_PASSWORD")
+        await page.fill("#userId", os.environ.get("FUW_PORTAL_USERNAME", ""))
+        await page.fill("#password", os.environ.get("FUW_PORTAL_PASSWORD", ""))
 
         # Click login button
         login_btn = await page.query_selector("button, input[type='submit'], input[type='button'], a.btn")

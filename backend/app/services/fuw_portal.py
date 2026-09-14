@@ -8,8 +8,8 @@ from popup_exam_card_solver import run_popup_exam_card_solver
 logger = logging.getLogger("fuw_portal")
 
 async def execute_fuw_portal_automation(
-    username: str = "REDACTED_USERNAME",
-    password: str = "REDACTED_PASSWORD",
+    username: str = os.environ.get("FUW_PORTAL_USERNAME", ""),
+    password: str = os.environ.get("FUW_PORTAL_PASSWORD", ""),
     portal_url: str = "https://ug.fuwportal.edu.ng/index.php",
     page_format: str = "A5"
 ) -> Tuple[Dict[str, Any], List[Dict[str, Any]], str]:

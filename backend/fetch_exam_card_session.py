@@ -1,3 +1,4 @@
+import os
 import asyncio
 from playwright.async_api import async_playwright
 
@@ -11,8 +12,8 @@ async def login_and_fetch_exam_card():
         await page.goto("https://ug.fuwportal.edu.ng/index.php", wait_until="networkidle")
 
         print("Entering credentials...")
-        await page.fill("#userId", "REDACTED_USERNAME")
-        await page.fill("#password", "REDACTED_PASSWORD")
+        await page.fill("#userId", os.environ.get("FUW_PORTAL_USERNAME", ""))
+        await page.fill("#password", os.environ.get("FUW_PORTAL_PASSWORD", ""))
 
         login_btn = await page.query_selector("button, input[type='submit'], input[type='button'], a.btn")
         if login_btn:

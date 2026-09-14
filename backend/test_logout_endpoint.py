@@ -1,3 +1,4 @@
+import os
 import httpx
 import asyncio
 
@@ -14,7 +15,7 @@ async def test_logout_actions():
         print("Testing logout contentvar...")
         for cv in ["logout", "main_logout", "user_logout", "destroy_session"]:
             data = {
-                "username": "REDACTED_USERNAME",
+                "username": os.environ.get("FUW_PORTAL_USERNAME", ""),
                 "contentvar": cv
             }
             res = await client.post("https://ug.fuwportal.edu.ng/scriptfile_a.php", data=data)

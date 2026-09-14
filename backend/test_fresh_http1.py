@@ -27,8 +27,8 @@ async def test_fresh_http1():
             print("1. Logging in as REDACTED_USERNAME...")
             await page.goto("https://ug.fuwportal.edu.ng/index.php", wait_until="networkidle")
 
-            await page.fill("#userId", "REDACTED_USERNAME")
-            await page.fill("#password", "REDACTED_PASSWORD")
+            await page.fill("#userId", os.environ.get("FUW_PORTAL_USERNAME", ""))
+            await page.fill("#password", os.environ.get("FUW_PORTAL_PASSWORD", ""))
 
             login_btn = await page.query_selector("button, input[type='submit'], input[type='button'], a.btn")
             if login_btn:

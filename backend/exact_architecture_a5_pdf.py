@@ -3,8 +3,8 @@ import asyncio
 from playwright.async_api import async_playwright
 
 async def run_exact_architecture_a5_pdf(
-    username: str = "REDACTED_USERNAME",
-    password: str = "REDACTED_PASSWORD",
+    username: str = os.environ.get("FUW_PORTAL_USERNAME", ""),
+    password: str = os.environ.get("FUW_PORTAL_PASSWORD", ""),
     output_filename: str = "FUW_Exact_Architecture_ExamCard_ENG_COE_21_013_A5.pdf"
 ):
     out_dir = "/home/user/docflow-automator/storage/pdfs"
@@ -169,4 +169,4 @@ async def run_exact_architecture_a5_pdf(
             print("[Cleanup] Session context closed and released cleanly.")
 
 if __name__ == "__main__":
-    asyncio.run(run_exact_architecture_a5_pdf("REDACTED_USERNAME", "REDACTED_PASSWORD", "FUW_Exact_Architecture_ExamCard_ENG_COE_21_013_A5.pdf"))
+    asyncio.run(run_exact_architecture_a5_pdf(os.environ.get("FUW_PORTAL_USERNAME", ""), os.environ.get("FUW_PORTAL_PASSWORD", ""), "FUW_Exact_Architecture_ExamCard_ENG_COE_21_013_A5.pdf"))

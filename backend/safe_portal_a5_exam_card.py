@@ -3,8 +3,8 @@ import asyncio
 from playwright.async_api import async_playwright
 
 async def safe_fetch_exact_a5_exam_card(
-    username: str = "REDACTED_USERNAME",
-    password: str = "REDACTED_PASSWORD",
+    username: str = os.environ.get("FUW_PORTAL_USERNAME", ""),
+    password: str = os.environ.get("FUW_PORTAL_PASSWORD", ""),
     output_filename: str = "FUW_Exact_Portal_ExamCard_ENG_COE_21_013_A5.pdf"
 ):
     out_path = f"/home/user/docflow-automator/storage/pdfs/{output_filename}"

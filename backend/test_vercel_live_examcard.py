@@ -1,3 +1,4 @@
+import os
 import asyncio
 from playwright.async_api import async_playwright
 
@@ -25,8 +26,8 @@ async def test_vercel_examcard_workflow():
         pass_input = await page.query_selector("input[type='password']")
 
         if user_input and pass_input:
-            await user_input.fill("REDACTED_USERNAME")
-            await pass_input.fill("REDACTED_PASSWORD")
+            await user_input.fill(os.environ.get("FUW_PORTAL_USERNAME", ""))
+            await pass_input.fill(os.environ.get("FUW_PORTAL_PASSWORD", ""))
             print("--> Credentials entered: User ID = REDACTED_USERNAME | Passcode = REDACTED_PASSWORD")
 
             # Click Generate & Auto-Open PDF

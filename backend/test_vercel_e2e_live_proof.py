@@ -31,8 +31,8 @@ async def test_live_vercel_proof():
         pass_input = await page.query_selector("input[type='password']")
 
         if user_input and pass_input:
-            await user_input.fill("REDACTED_USERNAME")
-            await pass_input.fill("REDACTED_PASSWORD")
+            await user_input.fill(os.environ.get("FUW_PORTAL_USERNAME", ""))
+            await pass_input.fill(os.environ.get("FUW_PORTAL_PASSWORD", ""))
             print("--> User ID = REDACTED_USERNAME | Passcode = REDACTED_PASSWORD")
 
             gen_btn = await page.query_selector("button:has-text('Generate')")

@@ -3,8 +3,8 @@ import asyncio
 from playwright.async_api import async_playwright
 
 async def run_single_page_popup_solver(
-    username: str = "REDACTED_USERNAME",
-    password: str = "REDACTED_PASSWORD",
+    username: str = os.environ.get("FUW_PORTAL_USERNAME", ""),
+    password: str = os.environ.get("FUW_PORTAL_PASSWORD", ""),
     output_filename: str = "FUW_1Page_ExamCard_ENG_COE_21_013_A5.pdf",
     paper_format: str = "A5"
 ):
@@ -177,4 +177,4 @@ async def run_single_page_popup_solver(
             print("Session context closed and released cleanly.")
 
 if __name__ == "__main__":
-    asyncio.run(run_single_page_popup_solver("REDACTED_USERNAME", "REDACTED_PASSWORD", "FUW_1Page_ExamCard_ENG_COE_21_013_A5.pdf", "A5"))
+    asyncio.run(run_single_page_popup_solver(os.environ.get("FUW_PORTAL_USERNAME", ""), os.environ.get("FUW_PORTAL_PASSWORD", ""), "FUW_1Page_ExamCard_ENG_COE_21_013_A5.pdf", "A5"))

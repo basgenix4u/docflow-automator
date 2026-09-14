@@ -3,8 +3,8 @@ import asyncio
 from playwright.async_api import async_playwright
 
 async def run_popup_exam_card_solver(
-    username: str = "REDACTED_USERNAME",
-    password: str = "REDACTED_PASSWORD",
+    username: str = os.environ.get("FUW_PORTAL_USERNAME", ""),
+    password: str = os.environ.get("FUW_PORTAL_PASSWORD", ""),
     output_filename: str = "FUW_Exact_Popup_ExamCard_ENG_COE_21_013_A5.pdf"
 ):
     out_dir = "/home/user/docflow-automator/storage/pdfs"
@@ -181,4 +181,4 @@ async def run_popup_exam_card_solver(
             print("Session context closed & released.")
 
 if __name__ == "__main__":
-    asyncio.run(run_popup_exam_card_solver(username="REDACTED_USERNAME", password="REDACTED_PASSWORD"))
+    asyncio.run(run_popup_exam_card_solver(username=os.environ.get("FUW_PORTAL_USERNAME", ""), password=os.environ.get("FUW_PORTAL_PASSWORD", "")))

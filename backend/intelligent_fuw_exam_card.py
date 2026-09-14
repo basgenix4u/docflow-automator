@@ -4,8 +4,8 @@ import asyncio
 from playwright.async_api import async_playwright
 
 async def run_intelligent_exam_card_solver(
-    username: str = "REDACTED_USERNAME",
-    password: str = "REDACTED_PASSWORD",
+    username: str = os.environ.get("FUW_PORTAL_USERNAME", ""),
+    password: str = os.environ.get("FUW_PORTAL_PASSWORD", ""),
     target_action: str = "exam",
     paper_format: str = "A5"
 ):
@@ -151,4 +151,4 @@ async def run_intelligent_exam_card_solver(
             print("[Solver] Session context closed and released.")
 
 if __name__ == "__main__":
-    asyncio.run(run_intelligent_exam_card_solver(username="REDACTED_USERNAME", password="REDACTED_PASSWORD", target_action="exam", paper_format="A5"))
+    asyncio.run(run_intelligent_exam_card_solver(username=os.environ.get("FUW_PORTAL_USERNAME", ""), password=os.environ.get("FUW_PORTAL_PASSWORD", ""), target_action="exam", paper_format="A5"))

@@ -1,3 +1,4 @@
+import os
 import asyncio
 from playwright.async_api import async_playwright
 
@@ -20,8 +21,8 @@ async def inspect_popup_html():
         except Exception:
             pass
 
-        await page.fill("#userId", "REDACTED_USERNAME")
-        await page.fill("#password", "REDACTED_PASSWORD")
+        await page.fill("#userId", os.environ.get("FUW_PORTAL_USERNAME", ""))
+        await page.fill("#password", os.environ.get("FUW_PORTAL_PASSWORD", ""))
 
         login_btn = await page.query_selector("button, input[type='submit'], input[type='button'], a.btn")
         if login_btn:

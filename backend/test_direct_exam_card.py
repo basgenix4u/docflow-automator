@@ -1,3 +1,4 @@
+import os
 import httpx
 import asyncio
 
@@ -17,8 +18,8 @@ async def test_direct_session():
 
         print("\n2. Posting login credentials to scriptfile_a.php...")
         data = {
-            "username": "REDACTED_USERNAME",
-            "password": "REDACTED_PASSWORD",
+            "username": os.environ.get("FUW_PORTAL_USERNAME", ""),
+            "password": os.environ.get("FUW_PORTAL_PASSWORD", ""),
             "contentvar": "main_login"
         }
         r1 = await client.post("https://ug.fuwportal.edu.ng/scriptfile_a.php", data=data)

@@ -17,8 +17,8 @@ async def test_direct_nav():
         try:
             print("Logging in as REDACTED_USERNAME...")
             await page.goto("https://ug.fuwportal.edu.ng/index.php", wait_until="networkidle")
-            await page.fill("#userId", "REDACTED_USERNAME")
-            await page.fill("#password", "REDACTED_PASSWORD")
+            await page.fill("#userId", os.environ.get("FUW_PORTAL_USERNAME", ""))
+            await page.fill("#password", os.environ.get("FUW_PORTAL_PASSWORD", ""))
 
             login_btn = await page.query_selector("button, input[type='submit'], input[type='button'], a.btn")
             if login_btn:
@@ -34,8 +34,8 @@ async def test_direct_nav():
                 await page.evaluate("$.post('scriptfile_a.php', { contentvar: 'logout' });")
                 await page.wait_for_timeout(3000)
                 await page.goto("https://ug.fuwportal.edu.ng/index.php", wait_until="networkidle")
-                await page.fill("#userId", "REDACTED_USERNAME")
-                await page.fill("#password", "REDACTED_PASSWORD")
+                await page.fill("#userId", os.environ.get("FUW_PORTAL_USERNAME", ""))
+                await page.fill("#password", os.environ.get("FUW_PORTAL_PASSWORD", ""))
                 retry_btn = await page.query_selector("button, input[type='submit'], input[type='button'], a.btn")
                 if retry_btn:
                     await retry_btn.click()

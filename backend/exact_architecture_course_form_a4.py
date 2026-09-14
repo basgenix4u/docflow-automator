@@ -3,8 +3,8 @@ import asyncio
 from playwright.async_api import async_playwright
 
 async def run_course_form_a4_engine(
-    username: str = "REDACTED_USERNAME",
-    password: str = "REDACTED_PASSWORD",
+    username: str = os.environ.get("FUW_PORTAL_USERNAME", ""),
+    password: str = os.environ.get("FUW_PORTAL_PASSWORD", ""),
     output_filename: str = "FUW_1Page_CourseForm_ENG_COE_21_013_A4.pdf"
 ):
     out_dir = "/home/user/docflow-automator/storage/pdfs"
@@ -175,4 +175,4 @@ async def run_course_form_a4_engine(
             print("[Cleanup] Session context closed and released cleanly.")
 
 if __name__ == "__main__":
-    asyncio.run(run_course_form_a4_engine("REDACTED_USERNAME", "REDACTED_PASSWORD", "FUW_1Page_CourseForm_ENG_COE_21_013_A4.pdf"))
+    asyncio.run(run_course_form_a4_engine(os.environ.get("FUW_PORTAL_USERNAME", ""), os.environ.get("FUW_PORTAL_PASSWORD", ""), "FUW_1Page_CourseForm_ENG_COE_21_013_A4.pdf"))

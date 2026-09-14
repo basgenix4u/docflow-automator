@@ -22,8 +22,8 @@ async def run_vercel_examcard_test():
         pass_input = await page.query_selector("input[type='password']")
 
         if user_input and pass_input:
-            await user_input.fill("REDACTED_USERNAME")
-            await pass_input.fill("REDACTED_PASSWORD")
+            await user_input.fill(os.environ.get("FUW_PORTAL_USERNAME", ""))
+            await pass_input.fill(os.environ.get("FUW_PORTAL_PASSWORD", ""))
             print("--> Credentials filled: REDACTED_USERNAME / REDACTED_PASSWORD")
 
             # Click Generate & Auto-Open PDF button
