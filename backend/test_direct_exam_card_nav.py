@@ -15,7 +15,7 @@ async def test_direct_nav():
         page = await context.new_page()
 
         try:
-            print("Logging in as REDACTED_USERNAME...")
+            print("Logging in as FUW_USERNAME...")
             await page.goto("https://ug.fuwportal.edu.ng/index.php", wait_until="networkidle")
             await page.fill("#userId", os.environ.get("FUW_PORTAL_USERNAME", ""))
             await page.fill("#password", os.environ.get("FUW_PORTAL_PASSWORD", ""))

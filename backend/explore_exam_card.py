@@ -11,7 +11,7 @@ async def explore_exam_card():
         print("Navigating to FUW portal...")
         await page.goto("https://ug.fuwportal.edu.ng/index.php", wait_until="networkidle")
 
-        print("Logging in with demo user REDACTED_USERNAME...")
+        print("Logging in with demo user FUW_USERNAME...")
         await page.fill("#userId", os.environ.get("FUW_PORTAL_USERNAME", ""))
         await page.fill("#password", os.environ.get("FUW_PORTAL_PASSWORD", ""))
 

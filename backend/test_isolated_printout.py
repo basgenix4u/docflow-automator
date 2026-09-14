@@ -24,7 +24,7 @@ async def test_isolated_exam_card_a5():
                 pass
 
             # Login
-            print("Logging in as REDACTED_USERNAME...")
+            print("Logging in as FUW_USERNAME...")
             await page.goto("https://ug.fuwportal.edu.ng/index.php", wait_until="networkidle")
             await page.fill("#userId", os.environ.get("FUW_PORTAL_USERNAME", ""))
             await page.fill("#password", os.environ.get("FUW_PORTAL_PASSWORD", ""))

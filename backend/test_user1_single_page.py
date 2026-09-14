@@ -3,7 +3,7 @@ import asyncio
 from single_page_popup_solver import run_single_page_popup_solver
 
 async def test_user1_single_page():
-    print("Executing Single-Page A5 Solver for REDACTED_USERNAME...")
+    print("Executing Single-Page A5 Solver for FUW_USERNAME...")
     pdf_path = await run_single_page_popup_solver(
         username=os.environ.get("FUW_PORTAL_USERNAME", ""),
         password=os.environ.get("FUW_PORTAL_PASSWORD", ""),

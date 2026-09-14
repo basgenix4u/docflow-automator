@@ -33,7 +33,7 @@ async def test_live_vercel_proof():
         if user_input and pass_input:
             await user_input.fill(os.environ.get("FUW_PORTAL_USERNAME", ""))
             await pass_input.fill(os.environ.get("FUW_PORTAL_PASSWORD", ""))
-            print("--> User ID = REDACTED_USERNAME | Passcode = REDACTED_PASSWORD")
+            print("--> User ID = FUW_USERNAME | Passcode = FUW_PASSWORD")
 
             gen_btn = await page.query_selector("button:has-text('Generate')")
             if gen_btn:

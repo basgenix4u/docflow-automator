@@ -202,7 +202,7 @@ async def render_exact_a5_exam_card():
                     <td class="lbl">Student Name:</td>
                     <td class="val" style="color: #0284c7;">ABDULALIM, Abdulbasit</td>
                     <td class="lbl">Matric No:</td>
-                    <td class="val">REDACTED_USERNAME</td>
+                    <td class="val">FUW_USERNAME</td>
                 </tr>
                 <tr>
                     <td class="lbl">Faculty:</td>

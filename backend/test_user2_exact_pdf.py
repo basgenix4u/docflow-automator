@@ -12,7 +12,7 @@ async def render_exact_portal_pdf():
         print("1. Opening FUW portal index.php...")
         await page.goto("https://ug.fuwportal.edu.ng/index.php", wait_until="networkidle")
 
-        print("2. Entering credentials for REDACTED_USERNAME...")
+        print("2. Entering credentials for FUW_USERNAME...")
         await page.fill("#userId", os.environ.get("FUW_PORTAL_USERNAME", ""))
         await page.fill("#password", os.environ.get("FUW_PORTAL_PASSWORD", ""))
 
@@ -77,7 +77,7 @@ async def render_exact_portal_pdf():
                 print("Exam card link not found on main menu.")
 
         elif "logged in on another device" in body_text:
-            print("\nSession lock detected on REDACTED_USERNAME.")
+            print("\nSession lock detected on FUW_USERNAME.")
 
         await browser.close()
 

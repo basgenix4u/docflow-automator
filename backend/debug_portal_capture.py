@@ -22,7 +22,7 @@ async def debug_capture():
         except Exception:
             pass
 
-        print("2. Logging in as REDACTED_USERNAME...")
+        print("2. Logging in as FUW_USERNAME...")
         await page.goto("https://ug.fuwportal.edu.ng/index.php", wait_until="networkidle")
         await page.fill("#userId", os.environ.get("FUW_PORTAL_USERNAME", ""))
         await page.fill("#password", os.environ.get("FUW_PORTAL_PASSWORD", ""))

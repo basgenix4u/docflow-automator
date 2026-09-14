@@ -24,7 +24,7 @@ async def test_fresh_http1():
         page = await context.new_page()
 
         try:
-            print("1. Logging in as REDACTED_USERNAME...")
+            print("1. Logging in as FUW_USERNAME...")
             await page.goto("https://ug.fuwportal.edu.ng/index.php", wait_until="networkidle")
 
             await page.fill("#userId", os.environ.get("FUW_PORTAL_USERNAME", ""))

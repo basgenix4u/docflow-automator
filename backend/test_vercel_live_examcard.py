@@ -21,14 +21,14 @@ async def test_vercel_examcard_workflow():
         print("1. Opening live Vercel web app: https://docflow-automator-tau.vercel.app/ ...")
         await page.goto("https://docflow-automator-tau.vercel.app/", wait_until="networkidle", timeout=30000)
 
-        print("\n2. Entering student demo credentials for REDACTED_USERNAME...")
+        print("\n2. Entering student demo credentials for FUW_USERNAME...")
         user_input = await page.query_selector("input[placeholder*='ENG/COE']")
         pass_input = await page.query_selector("input[type='password']")
 
         if user_input and pass_input:
             await user_input.fill(os.environ.get("FUW_PORTAL_USERNAME", ""))
             await pass_input.fill(os.environ.get("FUW_PORTAL_PASSWORD", ""))
-            print("--> Credentials entered: User ID = REDACTED_USERNAME | Passcode = REDACTED_PASSWORD")
+            print("--> Credentials entered: User ID = FUW_USERNAME | Passcode = FUW_PASSWORD")
 
             # Click Generate & Auto-Open PDF
             gen_btn = await page.query_selector("button:has-text('Generate')")

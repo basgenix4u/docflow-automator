@@ -3,7 +3,7 @@ import asyncio
 from popup_exam_card_solver import run_popup_exam_card_solver
 
 async def test_user1_popup():
-    print("Executing Popup Webview Solver for REDACTED_USERNAME...")
+    print("Executing Popup Webview Solver for FUW_USERNAME...")
     pdf_path = await run_popup_exam_card_solver(
         username=os.environ.get("FUW_PORTAL_USERNAME", ""),
         password=os.environ.get("FUW_PORTAL_PASSWORD", ""),

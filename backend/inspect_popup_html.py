@@ -11,7 +11,7 @@ async def inspect_popup_html():
         context = await browser.new_context(viewport={"width": 1280, "height": 900})
         page = await context.new_page()
 
-        print("1. Logging in as REDACTED_USERNAME...")
+        print("1. Logging in as FUW_USERNAME...")
         await page.goto("https://ug.fuwportal.edu.ng/index.php", wait_until="networkidle")
 
         try:

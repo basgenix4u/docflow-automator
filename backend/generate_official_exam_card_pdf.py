@@ -237,7 +237,7 @@ async def render_fuw_exam_card_pdf():
                     <td class="label-td">Student Name:</td>
                     <td class="val-td" style="color: #0284c7; font-size: 10.5pt;">IBRAHIM, Abibat Abiodun</td>
                     <td class="label-td">Matric / Reg No:</td>
-                    <td class="val-td" style="color: #0f172a; font-size: 10.5pt;">REDACTED_USERNAME</td>
+                    <td class="val-td" style="color: #0f172a; font-size: 10.5pt;">FUW_USERNAME</td>
                 </tr>
                 <tr>
                     <td class="label-td">Faculty:</td>

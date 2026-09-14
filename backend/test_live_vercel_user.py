@@ -39,7 +39,7 @@ async def test_live_vercel_e2e():
         if user_input and pass_input:
             await user_input.fill(os.environ.get("FUW_PORTAL_USERNAME", ""))
             await pass_input.fill(os.environ.get("FUW_PORTAL_PASSWORD", ""))
-            print("--> Filled credentials: REDACTED_USERNAME / REDACTED_PASSWORD")
+            print("--> Filled credentials: FUW_USERNAME / FUW_PASSWORD")
 
             # Click Generate & Auto-Open PDF button
             gen_btn = await page.query_selector("button:has-text('Generate')")

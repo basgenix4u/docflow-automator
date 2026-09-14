@@ -11,7 +11,7 @@ async def explore_inside_main():
         print("1. Opening FUW portal index.php...")
         await page.goto("https://ug.fuwportal.edu.ng/index.php", wait_until="networkidle")
 
-        print("2. Entering credentials for REDACTED_USERNAME...")
+        print("2. Entering credentials for FUW_USERNAME...")
         await page.fill("#userId", os.environ.get("FUW_PORTAL_USERNAME", ""))
         await page.fill("#password", os.environ.get("FUW_PORTAL_PASSWORD", ""))
 
