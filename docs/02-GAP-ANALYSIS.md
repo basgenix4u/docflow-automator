@@ -54,7 +54,7 @@ Both products are valid. Hardening keeps **public generate** for students and **
 3. **A01 Broken Access Control** — register `role=ADMIN`; all operator APIs unauthenticated.
 4. **A04 Insecure Design** — student passwords accepted then not stored (good) but **all generated documents listed to anyone**.
 5. **A05 Security Misconfiguration** — `CORS allow_origins=["*"]` + `allow_credentials=True`; `DEBUG=True` default.
-6. **Sensitive data in repo** — real student IDs/passwords in `.env.example`, `docker-compose.yml`, tests, and UI placeholders (`REDACTED_USERNAME`, `REDACTED_PASSWORD`, `REDACTED_PASSWORD`, named student HTML).
+6. **Sensitive data in repo** — real student IDs/passwords in `.env.example`, `docker-compose.yml`, tests, and UI placeholders (`your-student-id`, `your-portal-password`, `your-portal-password`, named student HTML).
 7. **A04 / abuse** — unauthenticated Playwright jobs with no rate limit (DoS + credential stuffing against FUW).
 
 ---

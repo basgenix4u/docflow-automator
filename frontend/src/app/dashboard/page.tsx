@@ -143,7 +143,7 @@ export default function DashboardPage() {
               <input
                 type="text"
                 required
-                placeholder="e.g. REDACTED_USERNAME"
+                placeholder="e.g. BSC/2020/12345"
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
                 className="w-full bg-emerald-900/40 border border-emerald-700/80 rounded-xl p-3 text-white font-mono text-sm focus:outline-none focus:border-emerald-400 focus:ring-1 focus:ring-emerald-400"

@@ -226,7 +226,7 @@ export default function PortalsPage() {
                   <label className="text-slate-300 block font-sans">Demo Password</label>
                   <input
                     type="password"
-                    placeholder="REDACTED_PASSWORD"
+                    placeholder="Your portal password"
                     value={newDemoPass}
                     onChange={(e) => setNewDemoPass(e.target.value)}
                     className="w-full bg-slate-950 border border-slate-800 rounded-lg p-2.5 text-slate-100 focus:outline-none focus:border-cyan-500"

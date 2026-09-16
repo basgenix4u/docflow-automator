@@ -43,7 +43,7 @@ export default function WorkflowsPage() {
   const handleExecuteWorkflow = async (workflowId: string) => {
     setErrorMessage(null);
     if (!customUser || !customPass) {
-      setErrorMessage("Please enter student User ID (e.g. REDACTED_USERNAME) and password.");
+      setErrorMessage("Please enter student User ID (e.g. BSC/2020/12345) and password.");
       return;
     }
 
@@ -105,7 +105,7 @@ export default function WorkflowsPage() {
                 <input
                   type="text"
                   required
-                  placeholder="e.g. REDACTED_USERNAME or REDACTED_USERNAME"
+                  placeholder="e.g. your-student-id or your-student-id"
                   value={customUser}
                   onChange={(e) => setCustomUser(e.target.value)}
                   className="w-full bg-slate-950 border border-slate-800 rounded-lg p-2.5 text-cyan-300 font-bold focus:outline-none focus:border-cyan-500"
